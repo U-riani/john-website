@@ -4,7 +4,10 @@ import {
   verifyEmailCode,
   isEmailVerified,
 } from "../services/emailVerificationService.js";
-import { sendVerificationEmail } from "../services/emailService.js";
+import {
+  sendVerificationEmail,
+  sendAdminNewOrderEmail,
+} from "../services/emailService.js";
 
 /**
  * STEP 1: request email verification
@@ -77,20 +80,26 @@ export async function createOrder(req, res) {
     // FREE WhatsApp admin notification
     const adminPhone = "995598907062";
 
-    const message = encodeURIComponent(
-      `New Order\n` +
-        `Order ID: ${order._id}\n` +
-        `Client: ${firstName} ${lastName}\n` +
-        `Email: ${email}\n` +
-        `Phone: ${phoneNumber}\n` +
-        `Total: ${totalAmount}`,
+    const clientPhone = phoneNumber.replace(/\D/g, "");
+
+    const whatsappMessage = encodeURIComponent(
+      `Hello ${firstName}, we received your order (#${order._id}).`,
     );
 
-    const adminWhatsAppUrl = `https://wa.me/${adminPhone}?text=${message}`;
+    const whatsappUrl = `https://wa.me/${clientPhone}?text=${whatsappMessage}`;
 
+    const adminOrderUrl = `${process.env.ADMIN_PANEL_URL}/orders/${order._id}`;
+
+    await sendAdminNewOrderEmail({
+      orderId: order._id,
+      adminOrderUrl,
+      whatsappUrl,
+      clientName: `${firstName} ${lastName}`,
+      totalAmount,
+    });
+    
     res.status(201).json({
       orderId: order._id,
-      adminWhatsAppUrl,
       success: true,
     });
   } catch (err) {
@@ -129,7 +138,7 @@ export async function updateOrderStatus(req, res) {
   const { orderId } = req.params;
   const { status } = req.body;
 
-  console.log("________________________________++++++++++")
+  console.log("________________________________++++++++++");
   const allowedStatuses = [
     "pending",
     "collected",
@@ -154,7 +163,7 @@ export async function updateOrderStatus(req, res) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    return res.status(200).json({order, success: true});
+    return res.status(200).json({ order, success: true });
   } catch (err) {
     console.error("Update order status failed:", err);
     return res.status(400).json({ error: "Invalid order ID" });
