@@ -101,7 +101,7 @@ export async function createOrder(req, res) {
       totalAmount,
     });
 
-    const clientOrderUrl = `${process.env.CLIENT_PANEL_URL}/order/${order._id}`;
+    const clientOrderUrl = `https://john-ecomerce.netlify.app/order/${order._id}`;
 
     await sendClientOrderEmail({
       orderId: order._id,
