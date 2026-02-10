@@ -1,3 +1,4 @@
+// backend/src/controllers/ordersController.js
 import Order from "../models/Order.js";
 import {
   generateEmailCode,
@@ -7,6 +8,8 @@ import {
 import {
   sendVerificationEmail,
   sendAdminNewOrderEmail,
+  sendClientStatusUpdateEmail,
+  sendClientOrderEmail,
 } from "../services/emailService.js";
 
 /**
@@ -97,13 +100,25 @@ export async function createOrder(req, res) {
       clientName: `${firstName} ${lastName}`,
       totalAmount,
     });
-    
+
+    const clientOrderUrl = `${process.env.CLIENT_PANEL_URL}/order/${order._id}`;
+
+    await sendClientOrderEmail({
+      orderId: order._id,
+      clientEmail: email,
+      clientName: `${firstName} ${lastName}`,
+      clientOrderUrl,
+      totalAmount,
+    });
+
     res.status(201).json({
       orderId: order._id,
       success: true,
     });
   } catch (err) {
-    res.status(400).json(err);
+    res.status(400).json({
+      error: err.message || "Something went wrong",
+    });
     console.log("================\n", err);
   }
 }
@@ -114,7 +129,7 @@ export async function getOrderByID(req, res) {
     const order = await Order.findById(orderId);
 
     if (!order) {
-      return res.status(400).json({ error: "order not found" });
+      return res.status(400).json({ error: "Order not found" });
     }
 
     return res.status(200).json(order);
@@ -138,7 +153,6 @@ export async function updateOrderStatus(req, res) {
   const { orderId } = req.params;
   const { status } = req.body;
 
-  console.log("________________________________++++++++++");
   const allowedStatuses = [
     "pending",
     "collected",
@@ -153,19 +167,33 @@ export async function updateOrderStatus(req, res) {
   }
 
   try {
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { status },
-      { new: true },
-    );
-
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
+    if (order.status === status) {
+      return res.status(200).json({ order, success: true });
+    }
+
+    order.status = status;
+    await order.save();
+
+    const clientOrderUrl = `https://john-ecomerce.netlify.app/order/${order._id}`;
+
+    await sendClientStatusUpdateEmail({
+      orderId: order._id,
+      clientEmail: order.client.email,
+      status,
+      clientOrderUrl,
+    });
+
     return res.status(200).json({ order, success: true });
   } catch (err) {
     console.error("Update order status failed:", err);
-    return res.status(400).json({ error: "Invalid order ID" });
+
+    return res.status(500).json({
+      error: err.message || "Failed to update order status",
+    });
   }
 }
