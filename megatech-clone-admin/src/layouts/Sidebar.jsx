@@ -60,6 +60,15 @@ export default function Sidebar({ open, onClose }) {
           >
             Orders
           </NavLink>
+          <NavLink
+            to="/products"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? active : ""}`
+            }
+          >
+            Products
+          </NavLink>
         </nav>
       </aside>
     </>

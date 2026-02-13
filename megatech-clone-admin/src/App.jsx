@@ -5,6 +5,7 @@ import OrdersList from "./pages/OrdersList";
 import OrderDetails from "./pages/OrderDetails";
 import Login from "./pages/Login";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import Products from "./pages/Products";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
                   path="/orders/:id"
                   element={<OrderDetails />}
                 />
+                <Route path="/products" element={<Products />} />
               </Routes>
             </AdminLayout>
           </ProtectedRoute>
