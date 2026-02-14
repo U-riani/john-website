@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
+console.log("API_URL:", API_URL);
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
