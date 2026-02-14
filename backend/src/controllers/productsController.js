@@ -1,6 +1,8 @@
 // backend/src/controllers/productsController.js
 
 import Product from "../models/Product.js";
+import WarehouseStock from "../models/WarehouseStock.js";
+
 function makeSlug(str = "") {
   return str
     .toLowerCase()
@@ -76,9 +78,20 @@ export async function importProducts(req, res) {
  */
 export async function getProducts(req, res) {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find();
 
-    return res.json(products);
+    const stocks = await WarehouseStock.find();
+
+    const stockMap = Object.fromEntries(
+      stocks.map((s) => [s.productId.toString(), s.quantity]),
+    );
+
+    const result = products.map((p) => ({
+      ...p.toObject(),
+      stock: stockMap[p._id.toString()] || 0,
+    }));
+
+    return res.json(result);
   } catch {
     return res.status(500).json({ error: "Failed to fetch products" });
   }
@@ -93,7 +106,14 @@ export async function getProductById(req, res) {
 
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    return res.json(product);
+    const stock = await WarehouseStock.findOne({
+      productId: product._id,
+    });
+
+    return res.json({
+      ...product.toObject(),
+      stock: stock?.quantity || 0,
+    });
   } catch {
     return res.status(400).json({ error: "Invalid product id" });
   }

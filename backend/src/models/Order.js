@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 const OrderItemSchema = new mongoose.Schema(
   {
     productId: {
-      type: Number,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
     },
     title: {
       type: String,
@@ -22,7 +22,7 @@ const OrderItemSchema = new mongoose.Schema(
       min: 1,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ClientSchema = new mongoose.Schema(
@@ -54,7 +54,7 @@ const ClientSchema = new mongoose.Schema(
       type: Date,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const OrderSchema = new mongoose.Schema(
@@ -85,7 +85,7 @@ const OrderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Order", OrderSchema);

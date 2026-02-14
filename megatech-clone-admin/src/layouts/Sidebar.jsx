@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-const navItem =
-  "block rounded-md px-3 py-2 text-sm hover:bg-gray-800";
+const navItem = "block rounded-md px-3 py-2 text-sm hover:bg-gray-800";
 const active = "bg-gray-800 text-white";
 
 export default function Sidebar({ open, onClose }) {
@@ -30,10 +29,7 @@ export default function Sidebar({ open, onClose }) {
           <span>MegaTech Admin</span>
 
           {/* Close button (mobile only) */}
-          <button
-            onClick={onClose}
-            className="text-sm text-gray-400 lg:hidden"
-          >
+          <button onClick={onClose} className="text-sm text-gray-400 lg:hidden">
             ✕
           </button>
         </div>
@@ -44,9 +40,7 @@ export default function Sidebar({ open, onClose }) {
             to="/"
             end
             onClick={onClose}
-            className={({ isActive }) =>
-              `${navItem} ${isActive ? active : ""}`
-            }
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
           >
             Dashboard
           </NavLink>
@@ -54,20 +48,37 @@ export default function Sidebar({ open, onClose }) {
           <NavLink
             to="/orders"
             onClick={onClose}
-            className={({ isActive }) =>
-              `${navItem} ${isActive ? active : ""}`
-            }
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
           >
             Orders
           </NavLink>
           <NavLink
             to="/products"
             onClick={onClose}
-            className={({ isActive }) =>
-              `${navItem} ${isActive ? active : ""}`
-            }
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
           >
             Products
+          </NavLink>
+          <NavLink
+            to="/warehouse"
+            onClick={onClose}
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
+          >
+            Warehouse
+          </NavLink>
+          <NavLink
+            to="/stock-logs"
+            onClick={onClose}
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
+          >
+            Stock Logs
+          </NavLink>
+          <NavLink
+            to="/failed-orders"
+            onClick={onClose}
+            className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
+          >
+            Failed Orders
           </NavLink>
         </nav>
       </aside>

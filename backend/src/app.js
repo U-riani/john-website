@@ -8,6 +8,7 @@ import httpLogger from "./middleware/httpLogger.js";
 import adminOrdersRoutes from "./routes/adminOrders.js";
 import adminProductsRoutes from "./routes/products.js";
 import uploadRoutes from "./routes/upload.js";
+import stockRoutes from "./routes/stock.js";
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use("/api/payments", paymentsRoutes);
 app.use("/api/admin", adminAuthRoutes);
 
 app.use("/api/admin", adminOrdersRoutes);
+
+app.use("/api/stock", stockRoutes);
 
 app.get("/api", (req, res) => {
   res.json({ title: "working" });

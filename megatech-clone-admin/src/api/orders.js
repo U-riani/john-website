@@ -1,3 +1,4 @@
+// frontend/src/api/orders.js
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 function authHeaders() {
@@ -89,4 +90,23 @@ export async function exportOrdersCsv(params = {}) {
 
   a.remove();
   window.URL.revokeObjectURL(url);
+}
+
+// ---- Failed Orders (ADMIN) ----
+export async function getFailedOrders() {
+  const res = await fetch(`${BASE_URL}/admin/orders/failed`, {
+    headers: authHeaders(),
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("admin_token");
+    window.location.href = "/login";
+    return;
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch failed orders");
+  }
+
+  return res.json();
 }

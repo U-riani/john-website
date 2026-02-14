@@ -1,3 +1,5 @@
+// frontend/src/components/Filters.jsx
+
 export default function Filters({
   minPrice,
   maxPrice,

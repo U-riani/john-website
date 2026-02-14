@@ -52,12 +52,6 @@ const ProductSchema = new mongoose.Schema(
       default: "GEL",
     },
 
-    stock: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
     volume: {
       type: String, // "250ml"
     },

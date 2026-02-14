@@ -32,8 +32,8 @@ export async function createOrder(payload) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to create order");
+    const data = await res.json();
+    throw new Error(data.code || data.error);
   }
 
   return res.json();

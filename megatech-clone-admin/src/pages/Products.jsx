@@ -23,7 +23,6 @@ export default function Products() {
     subCategory: "",
     price: "",
     salePrice: "",
-    stock: "",
     sku: "",
     barcode: "",
     volume: "",
@@ -117,7 +116,7 @@ export default function Products() {
       ...form,
       price: Number(form.price || 0),
       salePrice: Number(form.salePrice || 0),
-      stock: Number(form.stock || 0),
+     
     };
 
     try {
@@ -148,7 +147,6 @@ export default function Products() {
       subCategory: p.subCategory || "",
       price: p.price ?? "",
       salePrice: p.salePrice ?? "",
-      stock: p.stock ?? "",
       sku: p.sku || "",
       barcode: p.barcode || "",
       volume: p.volume || "",
@@ -195,7 +193,6 @@ export default function Products() {
           subCategory: row.subCategory?.trim(),
           price: Number(row.price || 0),
           salePrice: Number(row.salePrice || 0),
-          stock: Number(row.stock || 0),
           sku: row.sku?.trim(),
           barcode: row.barcode?.trim(),
           volume: row.volume?.trim(),
@@ -349,13 +346,7 @@ export default function Products() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="stock"
-            label="Stock"
-            type="number"
-            value={form.stock}
-            onChange={onChange}
-          />
+         
           <Input
             name="volume"
             label="Volume"
@@ -442,7 +433,6 @@ export default function Products() {
               <th className="px-4 py-3 text-left">Brand</th>
               <th className="px-4 py-3 text-left">Category</th>
               <th className="px-4 py-3 text-right">Price</th>
-              <th className="px-4 py-3 text-center">Stock</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -454,7 +444,6 @@ export default function Products() {
                 <td className="px-4 py-3">{p.brand}</td>
                 <td className="px-4 py-3">{p.category}</td>
                 <td className="px-4 py-3 text-right">${p.price}</td>
-                <td className="px-4 py-3 text-center">{p.stock}</td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <button
                     onClick={() => onEdit(p)}

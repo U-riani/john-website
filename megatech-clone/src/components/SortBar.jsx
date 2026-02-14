@@ -1,3 +1,4 @@
+// frontend/src/components/SortBar.jsx
 export default function SortBar({ sort, onChange, total }) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-4">

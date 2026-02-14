@@ -1,3 +1,4 @@
+// frontend/src/context/CartContext.jsx
 import { createContext, useContext, useEffect, useReducer } from "react";
 
 const CartContext = createContext(null);

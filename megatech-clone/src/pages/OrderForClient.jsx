@@ -1,7 +1,7 @@
+// frontend/src/pages/OrderForClient.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getOrderById } from "../api/orders";
-import { initUnipayPayment } from "../api/payments";
 
 export default function OrderForClient() {
   const POLL_INTERVAL = 4000; // 4 seconds

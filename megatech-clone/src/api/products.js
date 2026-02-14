@@ -1,26 +1,24 @@
-import { apiFetch } from "./client";
+// frontend/src/api/products.js
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-// get all products
-export function getProducts({ limit = 20, skip = 0 } = {}) {
-  return apiFetch(`/products?limit=${limit}&skip=${skip}`);
+/* ---------- GET ALL PRODUCTS ---------- */
+export async function getProducts(query = "") {
+  const url = query
+    ? `${BASE_URL}/products?q=${encodeURIComponent(query)}`
+    : `${BASE_URL}/products`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) throw new Error("Failed to fetch products");
+
+  return res.json();
 }
 
-// search products
-export function searchProducts(query) {
-  return apiFetch(`/products/search?q=${encodeURIComponent(query)}`);
-}
+/* ---------- GET SINGLE PRODUCT ---------- */
+export async function getProductById(id) {
+  const res = await fetch(`${BASE_URL}/products/${id}`);
 
-// get categories
-export function getCategories() {
-  return apiFetch("/products/category-list");
-}
+  if (!res.ok) throw new Error("Product not found");
 
-// products by category
-export function getProductsByCategory(category) {
-  return apiFetch(`/products/category/${category}`);
-}
-
-// single product
-export function getProductById(id) {
-  return apiFetch(`/products/${id}`);
+  return res.json();
 }

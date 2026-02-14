@@ -1,3 +1,4 @@
+// frontend/src/pages/Checkout.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -92,13 +93,17 @@ export default function Checkout() {
           quantity: i.quantity,
         })),
       });
-      console.log(res)
+      console.log(res);
       if (res.success) {
         clearCart();
         navigate(`/order-success/${res.orderId}`);
       }
     } catch (err) {
-      setError(`Failed to send verification email: ${err.message}`);
+      if (err.message === "OUT_OF_STOCK") {
+        setError("Some items are no longer in stock. Please update your cart.");
+      } else {
+        setError("Order failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

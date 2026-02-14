@@ -11,6 +11,9 @@ import {
   sendClientStatusUpdateEmail,
   sendClientOrderEmail,
 } from "../services/emailService.js";
+import StockService from "../services/StockService.js";
+import mongoose from "mongoose";
+import FailedOrder from "../models/FailedOrder.js";
 
 /**
  * STEP 1: request email verification
@@ -52,6 +55,7 @@ export async function confirmEmailVerification(req, res) {
 /**
  * STEP 3: create order
  */
+
 export async function createOrder(req, res) {
   const { items, firstName, lastName, email, phoneNumber } = req.body;
 
@@ -66,23 +70,46 @@ export async function createOrder(req, res) {
   }
 
   const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const session = await mongoose.startSession();
+
   try {
-    const order = await Order.create({
-      items,
-      totalAmount,
-      client: {
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        phoneVerified: false,
-        phoneVerifiedAt: null,
-      },
-    });
+    session.startTransaction();
 
-    // FREE WhatsApp admin notification
-    const adminPhone = "995598907062";
+    // 1️⃣ CREATE ORDER FIRST
+    const order = await Order.create(
+      [
+        {
+          items,
+          totalAmount,
+          client: {
+            firstName,
+            lastName,
+            email,
+            phoneNumber,
+            phoneVerified: false,
+            phoneVerifiedAt: null,
+          },
+        },
+      ],
+      { session },
+    ).then((r) => r[0]);
 
+    // 2️⃣ REMOVE STOCK (with meaningful reason)
+    for (const item of items) {
+      await StockService.remove(
+        item.productId,
+        item.quantity,
+        "system",
+        `Client order - ${order._id}`,
+        session,
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // EMAILS AFTER COMMIT (VERY IMPORTANT)
     const clientPhone = phoneNumber.replace(/\D/g, "");
 
     const whatsappMessage = encodeURIComponent(
@@ -111,15 +138,29 @@ export async function createOrder(req, res) {
       totalAmount,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       orderId: order._id,
       success: true,
     });
   } catch (err) {
-    res.status(400).json({
+    await session.abortTransaction();
+    session.endSession();
+    await FailedOrder.create({
+      client: { firstName, lastName, email, phoneNumber },
+      items,
+      reason: err.message,
+    });
+
+    if (err.code === "NOT_ENOUGH_STOCK") {
+      return res.status(409).json({
+        error: "Some products are no longer available",
+        code: "OUT_OF_STOCK",
+      });
+    }
+
+    return res.status(400).json({
       error: err.message || "Something went wrong",
     });
-    console.log("================\n", err);
   }
 }
 
@@ -196,4 +237,12 @@ export async function updateOrderStatus(req, res) {
       error: err.message || "Failed to update order status",
     });
   }
+}
+
+export async function getFailedOrders(req, res) {
+  console.log("+++++++++++++++++++++++++++++++++++++++\n", "Fetching failed orders...");
+  const failed = await FailedOrder.find()
+    .sort({ createdAt: -1 });
+
+  res.json(failed);
 }

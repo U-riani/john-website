@@ -1,3 +1,4 @@
+// frontend/src/pages/Cart.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";

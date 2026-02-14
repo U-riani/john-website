@@ -1,3 +1,4 @@
+// frontend/src/components/ActiveFilters.jsx
 export default function ActiveFilters({
   search,
   minPrice,
