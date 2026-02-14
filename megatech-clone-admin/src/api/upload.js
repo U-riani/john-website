@@ -9,7 +9,7 @@ export async function uploadImage(files) {
     formData.append("images", file);
   });
 
-  const res = await fetch(`${BASE_URL}/upload/image`, {
+  const res = await fetch(`${BASE_URL}/api/upload/image`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
