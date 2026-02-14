@@ -15,7 +15,7 @@ function authHeaders() {
 
 // ---------- GET ----------
 export async function getProducts() {
-  const res = await fetch(`${BASE_URL}/api/products`, {
+  const res = await fetch(`${BASE_URL}/products`, {
     headers: authHeaders(),
   });
 
@@ -25,7 +25,7 @@ export async function getProducts() {
 
 // ---------- CREATE ----------
 export async function createProduct(payload) {
-  const res = await fetch(`${BASE_URL}/api/products`, {
+  const res = await fetch(`${BASE_URL}/products`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -37,7 +37,7 @@ export async function createProduct(payload) {
 
 // ---------- UPDATE ----------
 export async function updateProduct(id, payload) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
+  const res = await fetch(`${BASE_URL}/products/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(payload),
@@ -49,7 +49,7 @@ export async function updateProduct(id, payload) {
 
 // ---------- DELETE ----------
 export async function deleteProduct(id) {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
+  const res = await fetch(`${BASE_URL}/products/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });

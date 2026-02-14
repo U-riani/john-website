@@ -6,7 +6,7 @@ function authHeaders() {
 }
 
 export async function getOrders() {
-  const res = await fetch(`${BASE_URL}/api/orders`, {
+  const res = await fetch(`${BASE_URL}/orders`, {
     headers: authHeaders(),
   });
 
@@ -20,7 +20,7 @@ export async function getOrders() {
 }
 
 export async function getOrderById(id) {
-  const res = await fetch(`${BASE_URL}/api/orders/${id}`, {
+  const res = await fetch(`${BASE_URL}/orders/${id}`, {
     headers: authHeaders(),
   });
 
@@ -34,7 +34,7 @@ export async function getOrderById(id) {
 }
 
 export async function updateOrderStatus({ id, status }) {
-  const res = await fetch(`${BASE_URL}/api/admin/orders/${id}/status`, {
+  const res = await fetch(`${BASE_URL}/admin/orders/${id}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -63,7 +63,7 @@ export async function exportOrdersCsv(params = {}) {
   const query = new URLSearchParams(params).toString();
 
   const res = await fetch(
-    `${import.meta.env.VITE_API_URL}/api/admin/orders/export${
+    `${import.meta.env.VITE_API_URL}/admin/orders/export${
       query ? `?${query}` : ""
     }`,
     {

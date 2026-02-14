@@ -213,7 +213,7 @@ export default function Products() {
       }
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/products/import`,
+        `${import.meta.env.VITE_API_URL}/products/import`,
         {
           method: "POST",
           headers: {

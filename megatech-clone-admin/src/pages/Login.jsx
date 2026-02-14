@@ -4,7 +4,6 @@ import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
 console.log("API_URL:", API_URL);
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -20,7 +19,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/login`, {
+      const res = await fetch(`${API_URL}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
