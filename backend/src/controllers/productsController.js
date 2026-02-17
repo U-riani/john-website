@@ -83,18 +83,24 @@ export async function importProducts(req, res) {
     ).lean();
 
     const existingSet = new Set(existing.map((p) => p.barcode));
+    const seen = new Set();
+    const skippedBarcodes = [];
 
     // 2️⃣ keep ONLY new products
-    const toInsert = products
-      .filter((p) => !existingSet.has(p.barcode))
-      .map((p) => {
-        const nameValue = getLocalizedValue(p.name);
+    const toInsert = products.filter((p) => {
+      if (!p.barcode) {
+        skippedBarcodes.push("(missing)");
+        return false;
+      }
 
-        return {
-          ...p,
-          slug: makeUniqueSlug(nameValue),
-        };
-      });
+      if (existingSet.has(p.barcode) || seen.has(p.barcode)) {
+        skippedBarcodes.push(p.barcode);
+        return false;
+      }
+
+      seen.add(p.barcode);
+      return true;
+    });
 
     if (!toInsert.length) {
       return res.json({
@@ -104,14 +110,22 @@ export async function importProducts(req, res) {
       });
     }
 
-    await Product.insertMany(toInsert);
+    const finalToInsert = toInsert.map((p) => ({
+      ...p,
+      slug: makeUniqueSlug(getLocalizedValue(p.name)),
+    }));
+
+    await Product.insertMany(finalToInsert);
 
     return res.json({
       success: true,
       inserted: toInsert.length,
       skipped: products.length - toInsert.length,
+      skippedBarcodes,
     });
   } catch (err) {
+    console.log("IMPORT ERROR:", err);
+
     return res.status(500).json({
       error: err.message || "Import failed",
     });

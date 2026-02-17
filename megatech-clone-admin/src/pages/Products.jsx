@@ -11,6 +11,13 @@ import {
 import * as XLSX from "xlsx";
 import { uploadImage } from "../api/upload";
 
+const parseArrayField = (value) =>
+  value
+    ? String(value)
+        .split(",")
+        .map((x) => x.trim())
+    : [];
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +25,8 @@ export default function Products() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadedUrls, setUploadedUrls] = useState([]);
+
+  const [importResult, setImportResult] = useState(null);
 
   const [toggleAddProduct, setToggleAddProduct] = useState(false);
 
@@ -322,6 +331,42 @@ export default function Products() {
       },
       usage: { ka: r.usage_ka, en: r.usage_en, ru: r.usage_ru },
 
+      hairType: {
+        ka: r.hairType_ka
+          ? String(r.hairType_ka)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+        en: r.hairType_en
+          ? String(r.hairType_en)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+        ru: r.hairType_ru
+          ? String(r.hairType_ru)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+      },
+
+      skinType: {
+        ka: r.skinType_ka
+          ? String(r.skinType_ka)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+        en: r.skinType_en
+          ? String(r.skinType_en)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+        ru: r.skinType_ru
+          ? String(r.skinType_ru)
+              .split(",")
+              .map((x) => x.trim())
+          : [],
+      },
+
       brand: r.brand,
       price: Number(r.price || 0),
       salePrice: Number(r.salePrice || 0),
@@ -332,7 +377,7 @@ export default function Products() {
       images: r.images?.split(",").map((x) => x.trim()) || [],
     }));
 
-    await fetch(`${import.meta.env.VITE_API_URL}/products/import`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/products/import`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -340,6 +385,15 @@ export default function Products() {
       },
       body: JSON.stringify({ products: parsedProducts }),
     });
+
+    const dataRes = await res.json();
+
+    if (!res.ok) {
+      alert(dataRes.error || "Import failed");
+      return;
+    }
+
+    setImportResult(dataRes);
 
     loadProducts();
   };
@@ -402,6 +456,25 @@ export default function Products() {
               className="ml-3"
             />
           </div>
+          {importResult && (
+            <div className="mt-3 rounded bg-green-50 border border-green-200 p-3 text-sm">
+              <div className="font-semibold text-green-800">
+                Import finished
+              </div>
+
+              <div>Inserted: {importResult.inserted}</div>
+              <div>Skipped: {importResult.skipped}</div>
+
+              {importResult.skippedBarcodes?.length > 0 && (
+                <div className="mt-2">
+                  <div className="font-medium">Skipped barcodes:</div>
+                  <div className="text-xs text-gray-700 max-h-32 overflow-auto">
+                    {importResult.skippedBarcodes.join(", ")}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* FORM */}
           <form
