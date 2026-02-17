@@ -7,10 +7,13 @@ import {
   confirmEmailVerification,
   createOrder,
 } from "../api/orders";
+import { useTranslation } from "react-i18next";
+import { getLocalized } from "../utils/getLocalized";
 
 export default function Checkout() {
   const { items, clearCart } = useCart();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -116,7 +119,7 @@ export default function Checkout() {
           to="/"
           className="inline-block rounded-md bg-gray-900 px-4 py-2 text-white"
         >
-          Continue shopping
+          {t("continueShopping")}
         </Link>
       </div>
 
@@ -126,13 +129,13 @@ export default function Checkout() {
         {items.map((item, idx) => (
           <div key={idx} className="flex justify-between text-sm">
             <div>
-              {item.title} × {item.quantity}
+              {getLocalized(item.title, i18n.language)} × {item.quantity}
             </div>
             <div className="font-medium">${item.price * item.quantity}</div>
           </div>
         ))}
         <div className="mt-3 flex justify-between border-t pt-3 font-bold">
-          <div>Total</div>
+          <div>{t("total")}</div>
           <div>${total}</div>
         </div>
       </div>
@@ -182,7 +185,7 @@ export default function Checkout() {
             disabled={codeSent || loading}
             className="rounded-md bg-sky-900 px-4 py-2 text-white disabled:opacity-50"
           >
-            Send Code
+            {t("sendCode")}
           </button>
         </div>
 
@@ -200,14 +203,14 @@ export default function Checkout() {
               onClick={verifyCode}
               className="rounded-md bg-green-700 px-4 py-2 text-white"
             >
-              Verify
+                
             </button>
           </div>
         )}
 
         {verified && (
           <div className="text-sm text-green-700 font-medium">
-            Email verified ✔
+            {t("verificationSuccess")}
           </div>
         )}
 
@@ -216,7 +219,7 @@ export default function Checkout() {
           disabled={!verified || loading}
           className="w-full rounded-md bg-sky-900 px-4 py-3 text-white disabled:opacity-50"
         >
-          Submit Order
+          {t("submitOrder")}
         </button>
       </form>
     </div>

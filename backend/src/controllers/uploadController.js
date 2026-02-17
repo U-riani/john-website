@@ -13,7 +13,7 @@ function uploadToCloudinary(fileBuffer, filename) {
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
-      }
+      },
     );
 
     streamifier.createReadStream(fileBuffer).pipe(stream);
@@ -30,9 +30,9 @@ export async function uploadImage(req, res) {
       req.files.map((file, index) => {
         const nameWithoutExt =
           file.originalname.split(".")[0] || `image-${Date.now()}-${index}`;
-
-        return uploadToCloudinary(file.buffer, nameWithoutExt);
-      })
+        const safeName = nameWithoutExt.replace(/[^\w-]/g, "").toLowerCase();
+        return uploadToCloudinary(file.buffer, safeName);
+      }),
     );
 
     return res.json({

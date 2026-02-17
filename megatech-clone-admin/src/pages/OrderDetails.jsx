@@ -118,7 +118,7 @@ export default function OrderDetails() {
           <tbody>
             {order.items.map((item, idx) => (
               <tr key={idx} className="border-b">
-                <td className="px-4 py-3">{item.title}</td>
+                <td className="px-4 py-3">{item.title.en}</td>
                 <td className="px-4 py-3 text-center">{item.quantity}</td>
                 <td className="px-4 py-3 text-right">${item.price}</td>
                 <td className="px-4 py-3 text-right font-medium">

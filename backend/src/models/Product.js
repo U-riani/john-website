@@ -1,38 +1,66 @@
 // backend/src/models/Product.js
 import mongoose from "mongoose";
 
+/* ---------- MULTI LANGUAGE FIELD ---------- */
+const LocalizedString = {
+  ka: { type: String, trim: true },
+  en: { type: String, trim: true },
+  ru: { type: String, trim: true },
+};
+
+const LocalizedArray = {
+  ka: { type: [String], default: [] },
+  en: { type: [String], default: [] },
+  ru: { type: [String], default: [] },
+};
+
 const ProductSchema = new mongoose.Schema(
   {
+    /* ---------- MULTI LANG CONTENT ---------- */
+
     name: {
-      type: String,
-      required: true,
-      trim: true,
+      ...LocalizedString,
     },
+
+    description: {
+      ...LocalizedString,
+    },
+    ingredients: {
+      ...LocalizedString,
+    },
+    usage: {
+      ...LocalizedString,
+    },
+
+    /* NEW → translated fields */
+    category: {
+      ...LocalizedString,
+    },
+    subCategory: {
+      ...LocalizedString,
+    },
+
+    /* ---------- TAGS (MULTI LANG ARRAY) ---------- */
+    hairType: LocalizedArray,
+    skinType: LocalizedArray,
+    tags: LocalizedArray,
+
+    /* ---------- NORMAL FIELDS ---------- */
 
     brand: {
       type: String,
       index: true,
     },
 
-    category: {
-      type: String,
-      required: true,
-      index: true,
-    },
-
-    subCategory: {
-      type: String,
-      index: true,
-    },
-
     sku: {
       type: String,
-      unique: true,
       sparse: true,
     },
 
     barcode: {
       type: String,
+      unique: true,
+      sparse: true,
       index: true,
     },
 
@@ -52,9 +80,7 @@ const ProductSchema = new mongoose.Schema(
       default: "GEL",
     },
 
-    volume: {
-      type: String, // "250ml"
-    },
+    volume: String,
 
     target: {
       type: String,
@@ -68,16 +94,10 @@ const ProductSchema = new mongoose.Schema(
       index: true,
     },
 
-    hairType: [String], // dry, oily, damaged...
-    skinType: [String], // normal, sensitive...
-
-    description: String,
-    ingredients: String,
-    usage: String,
-
-    images: [String],
-
-    tags: [String],
+    images: {
+      type: [String],
+      default: [],
+    },
 
     isActive: {
       type: Boolean,
@@ -87,5 +107,8 @@ const ProductSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+ProductSchema.index({ "name.en": "text", "name.ka": "text" });
+ProductSchema.index({ brand: 1, "category.en": 1 });
 
 export default mongoose.model("Product", ProductSchema);

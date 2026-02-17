@@ -3,12 +3,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrder } from "../api/orders";
+import { useTranslation } from "react-i18next";
+import { getLocalized } from "../utils/getLocalized";
 
 export default function Cart() {
   const { items, removeFromCart, changeQty, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+  const {t, i18n} = useTranslation();
+console.log(items);
   const total = items.reduce(
     (sum, i) => sum + i.price * i.quantity,
     0
@@ -38,12 +41,12 @@ export default function Cart() {
   };
 
   if (!items.length) {
-    return <div className="text-gray-500">Your cart is empty.</div>;
+    return <div className="text-gray-500">{t("yourCartIsEmpty")}</div>;
   }
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Cart</h1>
+      <h1 className="text-xl font-bold">{t("cart")}</h1>
 
       {items.map((item) => (
         <div
@@ -57,7 +60,7 @@ export default function Cart() {
           />
 
           <div className="flex-1">
-            <div className="font-medium">{item.title}</div>
+            <div className="font-medium">{getLocalized(item.title, i18n.language)}</div>
             <div className="text-sm text-gray-600">${item.price}</div>
           </div>
 
@@ -75,20 +78,20 @@ export default function Cart() {
             onClick={() => removeFromCart(item.id)}
             className="text-sm text-red-600 hover:underline"
           >
-            Remove
+            {t("remove")}
           </button>
         </div>
       ))}
 
       <div className="flex items-center justify-between border-t pt-4">
-        <div className="text-lg font-bold">Total: ${total}</div>
+        <div className="text-lg font-bold">{t("total")}: ${total}</div>
 
         <button
           onClick={onCheckout}
           disabled={loading}
           className="rounded-md bg-gray-900 px-6 py-3 text-white disabled:opacity-50"
         >
-          {loading ? "Processing…" : "Checkout"}
+          {loading ? "Processing…" : t("submitOrder")}
         </button>
       </div>
     </div>

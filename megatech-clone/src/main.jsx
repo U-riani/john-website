@@ -1,3 +1,4 @@
+// frontend/src/main.jsx
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
@@ -6,12 +7,17 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "./i18n";
 import { CartProvider } from "./context/CartContext.jsx";
+import { LanguageProvider } from "./context/language/LanguageContext.jsx";
+
 config.autoAddCss = false;
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <CartProvider>
-      <App />
+      <LanguageProvider>
+        <App />
+        
+      </LanguageProvider>
     </CartProvider>
-  </BrowserRouter>
+  </BrowserRouter>,
 );

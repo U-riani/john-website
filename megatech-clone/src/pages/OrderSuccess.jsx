@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getOrderById } from "../api/orders";
 import { initUnipayPayment } from "../api/payments";
+import { useTranslation } from "react-i18next";
+import { getLocalized } from "../utils/getLocalized";
 
 export default function OrderSuccess() {
   const POLL_INTERVAL = 4000; // 4 seconds
@@ -11,20 +13,9 @@ export default function OrderSuccess() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const { t, i18n } = useTranslation();
 
-  const onPay = async () => {
-    if (!order || paying) return;
-
-    try {
-      setPaying(true);
-      const { paymentUrl } = await initUnipayPayment(order._id);
-      window.location.href = paymentUrl;
-    } catch (e) {
-      alert("Payment initialization failed");
-      setPaying(false);
-    }
-  };
+  
 
   useEffect(() => {
     getOrderById(orderId)
@@ -41,13 +32,13 @@ export default function OrderSuccess() {
         const freshOrder = await getOrderById(order._id);
         setOrder(freshOrder);
       } catch (e) {
-        // silently fail, we retry anyway
+        console.error("Failed to fetch order status: ", e);
       }
     }, POLL_INTERVAL);
 
     return () => clearInterval(interval);
   }, [order]);
-
+console.log(order);
   if (loading) return <div>Loading order…</div>;
   if (!order) return <div>Order not found</div>;
 
@@ -67,7 +58,7 @@ export default function OrderSuccess() {
           {order.items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm">
               <div>
-                {item.title} × {item.quantity}
+                {getLocalized(item.title, i18n.language)} × {item.quantity}
               </div>
               <div className="font-medium">${item.price * item.quantity}</div>
             </div>

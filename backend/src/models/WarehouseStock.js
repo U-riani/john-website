@@ -15,9 +15,10 @@ const WarehouseStockSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+      index: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("WarehouseStock", WarehouseStockSchema);

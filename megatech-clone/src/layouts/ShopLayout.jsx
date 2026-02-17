@@ -1,6 +1,6 @@
 // frontend/src/layouts/ShopLayout.jsx
 import { useState } from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
 
 export default function ShopLayout({ children }) {

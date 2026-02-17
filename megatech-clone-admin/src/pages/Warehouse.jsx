@@ -188,7 +188,7 @@ export default function Warehouse() {
             <option value="">Select product</option>
             {stocks.map((s) => (
               <option key={s.productId?._id} value={s.productId?._id}>
-                {s.productId?.name}
+                {s.productId?.name.en}
               </option>
             ))}
           </select>
@@ -247,7 +247,7 @@ export default function Warehouse() {
           <tbody>
             {stocks.map((s) => (
               <tr key={s._id} className="border-b">
-                <td className="px-4 py-3">{s.productId?.name}</td>
+                <td className="px-4 py-3">{s.productId?.name.en}</td>
 
                 <td className="px-4 py-3 font-mono text-xs">
                   {s.productId?.barcode || "-"}

@@ -10,15 +10,13 @@ const initialState = {
 function cartReducer(state, action) {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existing = state.items.find(i => i.id === action.payload.id);
+      const existing = state.items.find((i) => i.id === action.payload.id);
 
       if (existing) {
         return {
           ...state,
-          items: state.items.map(i =>
-            i.id === action.payload.id
-              ? { ...i, quantity: i.quantity + 1 }
-              : i
+          items: state.items.map((i) =>
+            i.id === action.payload.id ? { ...i, quantity: i.quantity + 1 } : i,
           ),
         };
       }
@@ -32,16 +30,16 @@ function cartReducer(state, action) {
     case "REMOVE_ITEM":
       return {
         ...state,
-        items: state.items.filter(i => i.id !== action.payload),
+        items: state.items.filter((i) => i.id !== action.payload),
       };
 
     case "CHANGE_QTY":
       return {
         ...state,
-        items: state.items.map(i =>
+        items: state.items.map((i) =>
           i.id === action.payload.id
             ? { ...i, quantity: action.payload.quantity }
-            : i
+            : i,
         ),
       };
 
@@ -54,14 +52,23 @@ function cartReducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(
-    cartReducer,
-    initialState,
-    (init) => {
-      const stored = localStorage.getItem("cart");
-      return stored ? JSON.parse(stored) : init;
-    }
-  );
+  const [state, dispatch] = useReducer(cartReducer, initialState, (init) => {
+    const stored = localStorage.getItem("cart");
+    if (!stored) return init;
+
+    const parsed = JSON.parse(stored);
+
+    return {
+      ...parsed,
+      items: parsed.items.map((i) => ({
+        ...i,
+        title:
+          typeof i.title === "string"
+            ? { en: i.title } // migrate old format
+            : i.title,
+      })),
+    };
+  });
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(state));
@@ -69,10 +76,8 @@ export function CartProvider({ children }) {
 
   const value = {
     items: state.items,
-    addToCart: (product) =>
-      dispatch({ type: "ADD_ITEM", payload: product }),
-    removeFromCart: (id) =>
-      dispatch({ type: "REMOVE_ITEM", payload: id }),
+    addToCart: (product) => dispatch({ type: "ADD_ITEM", payload: product }),
+    removeFromCart: (id) => dispatch({ type: "REMOVE_ITEM", payload: id }),
     changeQty: (id, quantity) =>
       dispatch({ type: "CHANGE_QTY", payload: { id, quantity } }),
     clearCart: () => dispatch({ type: "CLEAR_CART" }),

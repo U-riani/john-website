@@ -3,6 +3,10 @@
 import Product from "../models/Product.js";
 import WarehouseStock from "../models/WarehouseStock.js";
 
+/* =====================================================
+   HELPERS
+===================================================== */
+
 function makeSlug(str = "") {
   return str
     .toLowerCase()
@@ -11,14 +15,43 @@ function makeSlug(str = "") {
     .replace(/\s+/g, "-");
 }
 
+function getLocalizedValue(val) {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+
+  return val.en || val.ka || val.ru || "";
+}
+
 /**
- * Create single product
+ * Avoid wiping existing translations
  */
+function mergeLocalized(oldVal = {}, newVal = {}) {
+  if (!newVal || typeof newVal !== "object") return oldVal;
+
+  return {
+    ka: newVal.ka !== undefined ? newVal.ka : oldVal?.ka,
+    en: newVal.en !== undefined ? newVal.en : oldVal?.en,
+    ru: newVal.ru !== undefined ? newVal.ru : oldVal?.ru,
+  };
+}
+
+function makeUniqueSlug(name = "") {
+  return `${makeSlug(name)}-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 8)}`;
+}
+
+/* =====================================================
+   CREATE PRODUCT
+===================================================== */
+
 export async function createProduct(req, res) {
   try {
+    const nameValue = getLocalizedValue(req.body.name);
+
     const product = await Product.create({
       ...req.body,
-      slug: `${makeSlug(req.body.name)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      slug: makeUniqueSlug(nameValue),
     });
 
     return res.status(201).json(product);
@@ -29,9 +62,10 @@ export async function createProduct(req, res) {
   }
 }
 
-/**
- * Import multiple products (ADMIN IMPORT)
- */
+/* =====================================================
+   IMPORT PRODUCTS (ADMIN)
+===================================================== */
+
 export async function importProducts(req, res) {
   const { products } = req.body;
 
@@ -40,31 +74,42 @@ export async function importProducts(req, res) {
   }
 
   try {
-    const ops = products.map((p) => ({
-      updateOne: {
-        filter: p.sku
-          ? { sku: p.sku }
-          : {
-              name: p.name,
-              brand: p.brand || "__no_brand__",
-            },
+    // 1️⃣ get all existing barcodes
+    const barcodes = products.map((p) => p.barcode).filter(Boolean);
 
-        update: {
-          $set: {
-            ...p,
-            slug: `${makeSlug(p.name)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          },
-        },
-        upsert: true,
-      },
-    }));
+    const existing = await Product.find(
+      { barcode: { $in: barcodes } },
+      { barcode: 1 },
+    ).lean();
 
-    const result = await Product.bulkWrite(ops);
+    const existingSet = new Set(existing.map((p) => p.barcode));
 
-    return res.status(200).json({
+    // 2️⃣ keep ONLY new products
+    const toInsert = products
+      .filter((p) => !existingSet.has(p.barcode))
+      .map((p) => {
+        const nameValue = getLocalizedValue(p.name);
+
+        return {
+          ...p,
+          slug: makeUniqueSlug(nameValue),
+        };
+      });
+
+    if (!toInsert.length) {
+      return res.json({
+        success: true,
+        inserted: 0,
+        skipped: products.length,
+      });
+    }
+
+    await Product.insertMany(toInsert);
+
+    return res.json({
       success: true,
-      imported: result.upsertedCount,
-      updated: result.modifiedCount,
+      inserted: toInsert.length,
+      skipped: products.length - toInsert.length,
     });
   } catch (err) {
     return res.status(500).json({
@@ -73,13 +118,13 @@ export async function importProducts(req, res) {
   }
 }
 
-/**
- * Get products
- */
+/* =====================================================
+   GET PRODUCTS
+===================================================== */
+
 export async function getProducts(req, res) {
   try {
     const products = await Product.find();
-
     const stocks = await WarehouseStock.find();
 
     const stockMap = Object.fromEntries(
@@ -93,18 +138,25 @@ export async function getProducts(req, res) {
 
     return res.json(result);
   } catch {
-    return res.status(500).json({ error: "Failed to fetch products" });
+    return res.status(500).json({
+      error: "Failed to fetch products",
+    });
   }
 }
 
-/**
- * Get single product
- */
+/* =====================================================
+   GET SINGLE PRODUCT
+===================================================== */
+
 export async function getProductById(req, res) {
   try {
     const product = await Product.findById(req.params.id);
 
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      return res.status(404).json({
+        error: "Product not found",
+      });
+    }
 
     const stock = await WarehouseStock.findOne({
       productId: product._id,
@@ -115,19 +167,67 @@ export async function getProductById(req, res) {
       stock: stock?.quantity || 0,
     });
   } catch {
-    return res.status(400).json({ error: "Invalid product id" });
+    return res.status(400).json({
+      error: "Invalid product id",
+    });
   }
 }
 
-/**
- * Update
- */
+/* =====================================================
+   UPDATE PRODUCT
+===================================================== */
+
 export async function updateProduct(req, res) {
   try {
+    const existing = await Product.findById(req.params.id);
+
+    if (!existing) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
     const update = { ...req.body };
 
+    // SAFE multilingual merge
     if (req.body.name) {
-      update.slug = makeSlug(req.body.name);
+      update.name = mergeLocalized(existing.name, req.body.name);
+
+      const nameValue = getLocalizedValue(update.name);
+
+      update.slug = `${makeUniqueSlug(nameValue)}-${Date.now()}-${Math.floor(
+        Math.random() * 1000,
+      )}`;
+    }
+
+    if (req.body.category) {
+      update.category = mergeLocalized(existing.category, req.body.category);
+    }
+
+    if (req.body.subCategory) {
+      update.subCategory = mergeLocalized(
+        existing.subCategory,
+        req.body.subCategory,
+      );
+    }
+
+    const localizedFields = [
+      "description",
+      "ingredients",
+      "usage",
+      "hairType",
+      "skinType",
+      "tags",
+    ];
+
+    localizedFields.forEach((field) => {
+      if (req.body[field]) {
+        update[field] = mergeLocalized(existing[field], req.body[field]);
+      }
+    });
+
+    if ("images" in req.body) {
+      update.images = Array.isArray(req.body.images)
+        ? req.body.images
+        : existing.images;
     }
 
     const product = await Product.findByIdAndUpdate(req.params.id, update, {
@@ -136,18 +236,23 @@ export async function updateProduct(req, res) {
 
     return res.json(product);
   } catch {
-    return res.status(400).json({ error: "Update failed" });
+    return res.status(400).json({
+      error: "Update failed",
+    });
   }
 }
 
-/**
- * Delete
- */
+/* =====================================================
+   DELETE PRODUCT
+===================================================== */
+
 export async function deleteProduct(req, res) {
   try {
     await Product.findByIdAndDelete(req.params.id);
     return res.json({ success: true });
   } catch {
-    return res.status(400).json({ error: "Delete failed" });
+    return res.status(400).json({
+      error: "Delete failed",
+    });
   }
 }

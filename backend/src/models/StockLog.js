@@ -22,8 +22,12 @@ const StockLogSchema = new mongoose.Schema(
     reason: String,
 
     adminId: String,
+    productSnapshot: {
+      name: String,
+      sku: String,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("StockLog", StockLogSchema);

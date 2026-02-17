@@ -1,4 +1,11 @@
+// backend/src/models/Order.js
 import mongoose from "mongoose";
+
+export const LocalizedString = {
+  ka: { type: String, trim: true },
+  en: { type: String, trim: true },
+  ru: { type: String, trim: true },
+};
 
 const OrderItemSchema = new mongoose.Schema(
   {
@@ -6,11 +13,8 @@ const OrderItemSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
     },
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    title: LocalizedString,
+
     price: {
       type: Number,
       required: true,

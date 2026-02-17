@@ -50,7 +50,7 @@ export default function StockLogs() {
                   {new Date(l.createdAt).toLocaleString()}
                 </td>
 
-                <td className="px-4 py-3">{l.productId?.name || "Unknown"}</td>
+                <td className="px-4 py-3">{l.productId?.name.en || "Unknown"}</td>
 
                 <td className="px-4 py-3 text-center font-semibold">
                   {l.type}

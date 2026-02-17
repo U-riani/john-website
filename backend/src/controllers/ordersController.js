@@ -14,6 +14,7 @@ import {
 import StockService from "../services/StockService.js";
 import mongoose from "mongoose";
 import FailedOrder from "../models/FailedOrder.js";
+import Product from "../models/Product.js";
 
 /**
  * STEP 1: request email verification
@@ -67,6 +68,23 @@ export async function createOrder(req, res) {
 
   if (!items?.length) {
     return res.status(400).json({ error: "Items required" });
+  }
+
+  for (const item of items) {
+    if (!mongoose.isValidObjectId(item.productId)) {
+      throw new Error("Invalid product id");
+    }
+
+    const product = await Product.findById(item.productId);
+
+    if (!product) throw new Error("Product missing");
+
+    item.title = {
+      ka: product.name?.ka || "",
+      en: product.name?.en || "",
+      ru: product.name?.ru || "",
+    };
+    item.price = product.salePrice ?? product.price;
   }
 
   const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -240,9 +258,11 @@ export async function updateOrderStatus(req, res) {
 }
 
 export async function getFailedOrders(req, res) {
-  console.log("+++++++++++++++++++++++++++++++++++++++\n", "Fetching failed orders...");
-  const failed = await FailedOrder.find()
-    .sort({ createdAt: -1 });
+  console.log(
+    "+++++++++++++++++++++++++++++++++++++++\n",
+    "Fetching failed orders...",
+  );
+  const failed = await FailedOrder.find().sort({ createdAt: -1 });
 
   res.json(failed);
 }
