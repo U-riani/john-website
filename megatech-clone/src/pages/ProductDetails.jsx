@@ -5,12 +5,12 @@ import { getProductById } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { useTranslation } from "react-i18next";
 import { getLocalized } from "../utils/getLocalized";
-
+import ProductMiniGallery from "../components/ProductMiniGallery";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const { addToCart } = useCart();
-  
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
@@ -26,16 +26,14 @@ export default function ProductDetails() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <img
-        src={product.images?.[0] || "/no-image.jpg"}
-        alt={product.name[i18n.language] || product.name.en || "Product Image"}
-        className="w-full rounded-lg border object-contain"
+      <ProductMiniGallery
+        images={product.images?.length ? product.images : ["/no-image.jpg"]}
       />
 
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">{getLocalized(product.name, i18n.language)}</h1>
-
-        
+        <h1 className="text-2xl font-bold">
+          {getLocalized(product.name, i18n.language)}
+        </h1>
 
         <div className="text-xl font-bold">${product.price}</div>
         <div className="text-sm text-gray-600">
@@ -63,14 +61,21 @@ export default function ProductDetails() {
         <div>
           <h2 className="text-lg font-semibold">{t("Details")}</h2>
           <ul className="list-disc list-inside text-gray-600">
-            <li>{t("Brand")}: {getLocalized(product.brand, i18n.language) || "N/A"}</li>
-            <li>{t("Category")}: {getLocalized(product.category, i18n.language) || "N/A"}</li>
+            <li>
+              {t("Brand")}:{" "}
+              {getLocalized(product.brand, i18n.language) || "N/A"}
+            </li>
+            <li>
+              {t("Category")}:{" "}
+              {getLocalized(product.category, i18n.language) || "N/A"}
+            </li>
           </ul>
         </div>
         <div>
           <h2 className="text-lg font-semibold">{t("Description")}</h2>
           <p className="text-gray-600">
-            {getLocalized(product.description, i18n.language) || "No additional description available."}
+            {getLocalized(product.description, i18n.language) ||
+              "No additional description available."}
           </p>
         </div>
       </div>

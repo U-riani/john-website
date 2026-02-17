@@ -8,13 +8,13 @@ import { getLocalized } from "../utils/getLocalized";
 
 export default function Sidebar() {
   const [categories, setCategories] = useState([]);
-  const {t, i18n} = useTranslation();
-
+  const { t, i18n } = useTranslation();
+  console.log(categories);
   useEffect(() => {
     getProducts()
       .then((products) => {
         const unique = [
-          ...new Set(products.map((p) => p.category.en).filter(Boolean)),
+          ...new Set(products.map((p) => p.category[i18n.language]).filter(Boolean)),
         ];
         setCategories(unique.sort());
       })

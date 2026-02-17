@@ -14,8 +14,9 @@ import { uploadImage } from "../api/upload";
 const parseArrayField = (value) =>
   value
     ? String(value)
-        .split(",")
+        .split(/[,;]+/)
         .map((x) => x.trim())
+        .filter(Boolean)
     : [];
 
 export default function Products() {
@@ -332,39 +333,15 @@ export default function Products() {
       usage: { ka: r.usage_ka, en: r.usage_en, ru: r.usage_ru },
 
       hairType: {
-        ka: r.hairType_ka
-          ? String(r.hairType_ka)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
-        en: r.hairType_en
-          ? String(r.hairType_en)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
-        ru: r.hairType_ru
-          ? String(r.hairType_ru)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
+        ka: parseArrayField(r.hairType_ka),
+        en: parseArrayField(r.hairType_en),
+        ru: parseArrayField(r.hairType_ru),
       },
 
       skinType: {
-        ka: r.skinType_ka
-          ? String(r.skinType_ka)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
-        en: r.skinType_en
-          ? String(r.skinType_en)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
-        ru: r.skinType_ru
-          ? String(r.skinType_ru)
-              .split(",")
-              .map((x) => x.trim())
-          : [],
+        ka: parseArrayField(r.skinType_ka),
+        en: parseArrayField(r.skinType_en),
+        ru: parseArrayField(r.skinType_ru),
       },
 
       brand: r.brand,
