@@ -1,19 +1,10 @@
 // frontend/src/pages/Home.jsx
-import { Link } from "react-router-dom";
+import ProductList from "./ProductList";
 
 export default function Home() {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Home</h1>
-
-      <p className="text-gray-600">Browse products from your real backend.</p>
-
-      <Link
-        to="/products"
-        className="inline-block rounded-md bg-gray-900 px-4 py-2 text-white"
-      >
-        Browse Products
-      </Link>
+      <ProductList />
     </div>
   );
 }

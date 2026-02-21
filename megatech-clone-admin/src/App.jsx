@@ -6,8 +6,8 @@ import OrderDetails from "./pages/OrderDetails";
 import Login from "./pages/Login";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Products from "./pages/Products";
-import Warehouse from "./pages/Warehouse";
-import StockLogs from "./pages/StockLogs";
+// import Warehouse from "./pages/Warehouse";
+// import StockLogs from "./pages/StockLogs";
 import FailedOrders from "./pages/FailedOrders";
 
 export default function App() {
@@ -25,8 +25,8 @@ export default function App() {
                 <Route path="/orders" element={<OrdersList />} />
                 <Route path="/orders/:id" element={<OrderDetails />} />
                 <Route path="/products" element={<Products />} />
-                <Route path="/warehouse" element={<Warehouse />} />
-                <Route path="/stock-logs" element={<StockLogs />} />
+                {/* <Route path="/warehouse" element={<Warehouse />} />
+                <Route path="/stock-logs" element={<StockLogs />} /> */}
                 <Route path="/failed-orders" element={<FailedOrders />} />
               </Routes>
             </AdminLayout>

@@ -11,7 +11,7 @@ import {
   sendClientStatusUpdateEmail,
   sendClientOrderEmail,
 } from "../services/emailService.js";
-import StockService from "../services/StockService.js";
+// import StockService from "../services/StockService.js";
 import mongoose from "mongoose";
 import FailedOrder from "../models/FailedOrder.js";
 import Product from "../models/Product.js";
@@ -113,16 +113,7 @@ export async function createOrder(req, res) {
       { session },
     ).then((r) => r[0]);
 
-    // 2️⃣ REMOVE STOCK (with meaningful reason)
-    for (const item of items) {
-      await StockService.remove(
-        item.productId,
-        item.quantity,
-        "system",
-        `Client order - ${order._id}`,
-        session,
-      );
-    }
+ 
 
     await session.commitTransaction();
     session.endSession();

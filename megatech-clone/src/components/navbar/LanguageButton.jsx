@@ -27,7 +27,7 @@ const LanguageButton = () => {
   };
 
   return (
-    <div className="m-0 p-0">
+    <div className="m-0 p-0 flex items-center ">
       <button
         onClick={toggleLanguage}
         className="w-7 h-7 hover:scale-105 transition cursor-pointer"

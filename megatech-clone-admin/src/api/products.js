@@ -30,13 +30,14 @@ export async function createProduct(payload) {
     headers: authHeaders(),
     body: JSON.stringify(payload),
   });
-
+console.log(payload);
   if (!res.ok) throw new Error("Failed to create product");
   return res.json();
 }
 
 // ---------- UPDATE ----------
 export async function updateProduct(id, payload) {
+  console.log(payload);
   const res = await fetch(`${BASE_URL}/products/${id}`, {
     method: "PATCH",
     headers: authHeaders(),

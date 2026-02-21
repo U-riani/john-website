@@ -10,12 +10,9 @@ export default function Cart() {
   const { items, removeFromCart, changeQty, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const {t, i18n} = useTranslation();
-console.log(items);
-  const total = items.reduce(
-    (sum, i) => sum + i.price * i.quantity,
-    0
-  );
+  const { t, i18n } = useTranslation();
+  console.log(items);
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const onCheckout = async () => {
     navigate(`/checkout`);
@@ -45,51 +42,53 @@ console.log(items);
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">{t("cart")}</h1>
-
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center gap-4 rounded-md border bg-white p-4"
-        >
-          <img
-            src={item.thumbnail}
-            alt={item.title}
-            className="h-16 w-16 object-contain"
-          />
-
-          <div className="flex-1">
-            <div className="font-medium">{getLocalized(item.title, i18n.language)}</div>
-            <div className="text-sm text-gray-600">${item.price}</div>
-          </div>
-
-          <input
-            type="number"
-            min="1"
-            value={item.quantity}
-            onChange={(e) =>
-              changeQty(item.id, Number(e.target.value))
-            }
-            className="w-16 rounded border px-2 py-1"
-          />
-
-          <button
-            onClick={() => removeFromCart(item.id)}
-            className="text-sm text-red-600 hover:underline"
+    <div className="space-y-4 ">
+      <h1 className="text-xl font-bold ">{t("cart")}</h1>
+      <div className="border border-gray-200 p-5 space-y-4 shadow-md rounded-2xl">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center gap-4 rounded-2xl border border-gray-200 shadow-md bg-white p-4"
           >
-            {t("remove")}
-          </button>
-        </div>
-      ))}
+            <img
+              src={item.thumbnail}
+              alt={item.title}
+              className="h-16 w-16 object-contain"
+            />
 
-      <div className="flex items-center justify-between border-t pt-4">
-        <div className="text-lg font-bold">{t("total")}: ${total}</div>
+            <div className="flex-1">
+              <div className="font-medium">
+                {getLocalized(item.title, i18n.language)}
+              </div>
+              <div className="text-sm text-gray-600">${item.price}</div>
+            </div>
+
+            <input
+              type="number"
+              min="1"
+              value={item.quantity}
+              onChange={(e) => changeQty(item.id, Number(e.target.value))}
+              className="w-16 rounded-xl border border-gray-300 shadow-md px-2 py-1"
+            />
+
+            <button
+              onClick={() => removeFromCart(item.id)}
+              className="text-sm text-rose-500 hover:underline"
+            >
+              {t("remove")}
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between border-t-2 border-gray-500 pt-4">
+        <div className="text-lg font-semibold border border-gray-200 px-3 py-2 rounded-2xl shadow-md">
+          {t("total")}: ₾{total}
+        </div>
 
         <button
           onClick={onCheckout}
           disabled={loading}
-          className="rounded-md bg-gray-900 px-6 py-3 text-white disabled:opacity-50"
+          className="rounded-md bg-lime-400 px-6 py-3 text-white shadow-md disabled:opacity-50 hover:bg-lime-600 cursor-pointer"
         >
           {loading ? "Processing…" : t("submitOrder")}
         </button>

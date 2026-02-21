@@ -28,9 +28,7 @@ const ProductSchema = new mongoose.Schema(
     ingredients: {
       ...LocalizedString,
     },
-    usage: {
-      ...LocalizedString,
-    },
+
 
     /* NEW → translated fields */
     category: {
@@ -40,27 +38,12 @@ const ProductSchema = new mongoose.Schema(
       ...LocalizedString,
     },
 
-    /* ---------- TAGS (MULTI LANG ARRAY) ---------- */
-    hairType: LocalizedArray,
-    skinType: LocalizedArray,
-    tags: LocalizedArray,
+
 
     /* ---------- NORMAL FIELDS ---------- */
 
     brand: {
       type: String,
-      index: true,
-    },
-
-    sku: {
-      type: String,
-      sparse: true,
-    },
-
-    barcode: {
-      type: String,
-      unique: true,
-      sparse: true,
       index: true,
     },
 
@@ -78,14 +61,6 @@ const ProductSchema = new mongoose.Schema(
     currency: {
       type: String,
       default: "GEL",
-    },
-
-    volume: String,
-
-    target: {
-      type: String,
-      enum: ["men", "women", "unisex"],
-      default: "unisex",
     },
 
     slug: {

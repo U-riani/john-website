@@ -1,7 +1,6 @@
 // frontend/src/pages/Products.jsx
-// frontend/src/pages/Products.jsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getProducts,
   createProduct,
@@ -10,6 +9,9 @@ import {
 } from "../api/products";
 import * as XLSX from "xlsx";
 import { uploadImage } from "../api/upload";
+
+// ✅ docx-preview: use renderAsync (NOT mammoth-style convertToHtml)
+import { renderAsync } from "docx-preview";
 
 const parseArrayField = (value) =>
   value
@@ -28,8 +30,28 @@ export default function Products() {
   const [uploadedUrls, setUploadedUrls] = useState([]);
 
   const [importResult, setImportResult] = useState(null);
-
   const [toggleAddProduct, setToggleAddProduct] = useState(false);
+
+  const [docNames, setDocNames] = useState({
+    description_ka: "",
+    description_en: "",
+    description_ru: "",
+    ingredients_ka: "",
+    ingredients_en: "",
+    ingredients_ru: "",
+  });
+
+  // used to force-remount file input when you want to reset it
+  const [docInputKeys, setDocInputKeys] = useState({
+    description_ka: 0,
+    description_en: 0,
+    description_ru: 0,
+    ingredients_ka: 0,
+    ingredients_en: 0,
+    ingredients_ru: 0,
+  });
+  // ✅ hidden container used by docx-preview to render HTML
+  const docxRenderRef = useRef(null);
 
   const emptyForm = {
     name_ka: "",
@@ -49,11 +71,6 @@ export default function Products() {
     price: "",
     salePrice: "",
 
-    sku: "",
-    barcode: "",
-    volume: "",
-    target: "unisex",
-
     description_ka: "",
     description_en: "",
     description_ru: "",
@@ -61,18 +78,6 @@ export default function Products() {
     ingredients_ka: "",
     ingredients_en: "",
     ingredients_ru: "",
-
-    usage_ka: "",
-    usage_en: "",
-    usage_ru: "",
-
-    hairType_ka: "",
-    hairType_en: "",
-    hairType_ru: "",
-
-    skinType_ka: "",
-    skinType_en: "",
-    skinType_ru: "",
 
     images: [],
   };
@@ -87,7 +92,8 @@ export default function Products() {
     try {
       const data = await getProducts();
       setProducts(data);
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Failed to load products");
     } finally {
       setLoading(false);
@@ -105,9 +111,64 @@ export default function Products() {
   const onChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
+  /**
+   * ✅ DOCX -> rendered HTML via docx-preview
+   * - renders docx into hidden container
+   * - stores container.innerHTML into the selected field (description_ka/en/ru or ingredients_ka/en/ru)
+   */
+  const handleDocUpload = async (e) => {
+    const { name, files } = e.target;
+    const file = files?.[0];
+    if (!file) return;
+
+    // ✅ show filename and keep it visible
+    setDocNames((prev) => ({ ...prev, [name]: file.name }));
+
+    try {
+      const container = docxRenderRef.current;
+      if (!container) throw new Error("Missing docx render container");
+
+      container.innerHTML = "";
+
+      await renderAsync(file, container, null, {
+        inWrapper: false,
+        ignoreWidth: true,
+        ignoreHeight: true,
+      });
+
+      const html = container.innerHTML;
+
+      setForm((prev) => ({
+        ...prev,
+        [name]: html,
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to parse Word document");
+    }
+  };
+
   const resetForm = () => {
     setForm({ ...emptyForm });
     setEditingId(null);
+    setImportResult(null);
+
+    // clear visible filenames
+    setDocNames({
+      description_ka: "",
+      description_en: "",
+      description_ru: "",
+      ingredients_ka: "",
+      ingredients_en: "",
+      ingredients_ru: "",
+    });
+
+    // force reset file inputs
+    setDocInputKeys((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((k) => (next[k] = next[k] + 1));
+      return next;
+    });
   };
 
   const buildPayload = () => ({
@@ -141,43 +202,9 @@ export default function Products() {
       ru: form.ingredients_ru,
     },
 
-    usage: {
-      ka: form.usage_ka,
-      en: form.usage_en,
-      ru: form.usage_ru,
-    },
-
-    hairType: {
-      ka: form.hairType_ka
-        ? form.hairType_ka.split(",").map((x) => x.trim())
-        : [],
-      en: form.hairType_en
-        ? form.hairType_en.split(",").map((x) => x.trim())
-        : [],
-      ru: form.hairType_ru
-        ? form.hairType_ru.split(",").map((x) => x.trim())
-        : [],
-    },
-
-    skinType: {
-      ka: form.skinType_ka
-        ? form.skinType_ka.split(",").map((x) => x.trim())
-        : [],
-      en: form.skinType_en
-        ? form.skinType_en.split(",").map((x) => x.trim())
-        : [],
-      ru: form.skinType_ru
-        ? form.skinType_ru.split(",").map((x) => x.trim())
-        : [],
-    },
-
     brand: form.brand,
     price: Number(form.price || 0),
     salePrice: Number(form.salePrice || 0),
-    sku: form.sku,
-    barcode: form.barcode,
-    volume: form.volume,
-    target: form.target,
     images: form.images,
   });
 
@@ -199,7 +226,8 @@ export default function Products() {
 
       resetForm();
       loadProducts();
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Save failed");
     }
   };
@@ -230,10 +258,6 @@ export default function Products() {
 
       price: p.price ?? "",
       salePrice: p.salePrice ?? "",
-      sku: p.sku || "",
-      barcode: p.barcode || "",
-      volume: p.volume || "",
-      target: p.target || "unisex",
 
       description_ka: p.description?.ka || "",
       description_en: p.description?.en || "",
@@ -242,18 +266,6 @@ export default function Products() {
       ingredients_ka: p.ingredients?.ka || "",
       ingredients_en: p.ingredients?.en || "",
       ingredients_ru: p.ingredients?.ru || "",
-
-      usage_ka: p.usage?.ka || "",
-      usage_en: p.usage?.en || "",
-      usage_ru: p.usage?.ru || "",
-
-      hairType_ka: p.hairType?.ka?.join(", ") || "",
-      hairType_en: p.hairType?.en?.join(", ") || "",
-      hairType_ru: p.hairType?.ru?.join(", ") || "",
-
-      skinType_ka: p.skinType?.ka?.join(", ") || "",
-      skinType_en: p.skinType?.en?.join(", ") || "",
-      skinType_ru: p.skinType?.ru?.join(", ") || "",
 
       images: p.images || [],
     });
@@ -265,8 +277,13 @@ export default function Products() {
 
   const onDelete = async (id) => {
     if (!confirm("Delete product?")) return;
-    await deleteProduct(id);
-    loadProducts();
+    try {
+      await deleteProduct(id);
+      loadProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed");
+    }
   };
 
   /* ======================================
@@ -277,26 +294,36 @@ export default function Products() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    setUploading(true);
-    const res = await uploadImage(files);
-    setUploadedUrls(res.urls || []);
-    setUploading(false);
+    try {
+      setUploading(true);
+      const res = await uploadImage(files);
+      setUploadedUrls(res.urls || []);
+    } catch (err) {
+      console.error(err);
+      alert("Image upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    setUploading(true);
+    try {
+      setUploading(true);
+      const res = await uploadImage(files);
 
-    const res = await uploadImage(files);
-
-    setForm((prev) => ({
-      ...prev,
-      images: [...prev.images, ...res.urls],
-    }));
-
-    setUploading(false);
+      setForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...(res.urls || [])],
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Image upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   /* ======================================
@@ -307,81 +334,73 @@ export default function Products() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    try {
+      const buf = await file.arrayBuffer();
+      const workbook = XLSX.read(buf);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
 
-    const parsedProducts = rows.map((r) => ({
-      name: { ka: r.name_ka, en: r.name_en, ru: r.name_ru },
-      category: { ka: r.category_ka, en: r.category_en, ru: r.category_ru },
-      subCategory: {
-        ka: r.subCategory_ka,
-        en: r.subCategory_en,
-        ru: r.subCategory_ru,
-      },
-      description: {
-        ka: r.description_ka,
-        en: r.description_en,
-        ru: r.description_ru,
-      },
-      ingredients: {
-        ka: r.ingredients_ka,
-        en: r.ingredients_en,
-        ru: r.ingredients_ru,
-      },
-      usage: { ka: r.usage_ka, en: r.usage_en, ru: r.usage_ru },
+      const parsedProducts = rows.map((r) => ({
+        name: { ka: r.name_ka, en: r.name_en, ru: r.name_ru },
+        category: { ka: r.category_ka, en: r.category_en, ru: r.category_ru },
+        subCategory: {
+          ka: r.subCategory_ka,
+          en: r.subCategory_en,
+          ru: r.subCategory_ru,
+        },
+        description: {
+          ka: r.description_ka,
+          en: r.description_en,
+          ru: r.description_ru,
+        },
+        ingredients: {
+          ka: r.ingredients_ka,
+          en: r.ingredients_en,
+          ru: r.ingredients_ru,
+        },
 
-      hairType: {
-        ka: parseArrayField(r.hairType_ka),
-        en: parseArrayField(r.hairType_en),
-        ru: parseArrayField(r.hairType_ru),
-      },
+        brand: r.brand,
+        price: Number(r.price || 0),
+        salePrice: Number(r.salePrice || 0),
 
-      skinType: {
-        ka: parseArrayField(r.skinType_ka),
-        en: parseArrayField(r.skinType_en),
-        ru: parseArrayField(r.skinType_ru),
-      },
+        images: r.images?.split(",").map((x) => x.trim()) || [],
+      }));
 
-      brand: r.brand,
-      price: Number(r.price || 0),
-      salePrice: Number(r.salePrice || 0),
-      sku: r.sku,
-      barcode: r.barcode,
-      volume: r.volume,
-      target: r.target || "unisex",
-      images: r.images?.split(",").map((x) => x.trim()) || [],
-    }));
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/products/import`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+          },
+          body: JSON.stringify({ products: parsedProducts }),
+        },
+      );
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/products/import`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
-      },
-      body: JSON.stringify({ products: parsedProducts }),
-    });
+      const dataRes = await res.json();
 
-    const dataRes = await res.json();
+      if (!res.ok) {
+        alert(dataRes.error || "Import failed");
+        return;
+      }
 
-    if (!res.ok) {
-      alert(dataRes.error || "Import failed");
-      return;
+      setImportResult(dataRes);
+      loadProducts();
+      e.target.value = "";
+    } catch (err) {
+      console.error(err);
+      alert("Import failed");
     }
-
-    setImportResult(dataRes);
-
-    loadProducts();
   };
 
   /* ======================================
      RENDER
   ====================================== */
+
   const getText = (obj) => {
     if (!obj) return "";
     if (typeof obj === "string") return obj;
-
     return obj.en || obj.ka || obj.ru || "";
   };
 
@@ -392,15 +411,23 @@ export default function Products() {
       <div className="flex justify-between">
         <h1 className="text-xl font-bold">Products</h1>
         <button
-          className={`px-3 py-1 rounded ${toggleAddProduct ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
+          className={`px-3 py-1 rounded ${
+            toggleAddProduct
+              ? "bg-red-500 text-white"
+              : "bg-green-500 text-white"
+          }`}
           type="button"
           onClick={() => setToggleAddProduct(!toggleAddProduct)}
         >
           {toggleAddProduct ? "-" : "+"}
         </button>
       </div>
+
       {toggleAddProduct && (
         <div>
+          {/* Hidden docx render container */}
+          <div ref={docxRenderRef} className="hidden" />
+
           {/* IMAGE URL GENERATOR */}
           <div className="rounded-lg bg-white p-4 shadow space-y-3">
             <h2 className="font-semibold">Upload Images → Get URLs</h2>
@@ -433,12 +460,12 @@ export default function Products() {
               className="ml-3"
             />
           </div>
+
           {importResult && (
             <div className="mt-3 rounded bg-green-50 border border-green-200 p-3 text-sm">
               <div className="font-semibold text-green-800">
                 Import finished
               </div>
-
               <div>Inserted: {importResult.inserted}</div>
               <div>Skipped: {importResult.skipped}</div>
 
@@ -534,123 +561,55 @@ export default function Products() {
               value={form.salePrice}
               onChange={onChange}
             />
-            <Input
-              name="sku"
-              label="SKU"
-              value={form.sku}
-              onChange={onChange}
-            />
-            <Input
-              name="barcode"
-              label="Barcode"
-              value={form.barcode}
-              onChange={onChange}
-            />
-            <Input
-              name="volume"
-              label="Volume"
-              value={form.volume}
-              onChange={onChange}
-            />
-            <select name="target" value={form.target} onChange={onChange}>
-              <option value="unisex">Unisex</option>
-              <option value="men">Men</option>
-              <option value="women">Women</option>
-            </select>
-            <Input
+
+            {/* DESCRIPTION DOCX UPLOADS */}
+            <DocInput
               name="description_ka"
-              label="Description KA"
-              value={form.description_ka}
-              onChange={onChange}
+              label="Description KA (.docx)"
+              fileName={docNames.description_ka}
+              inputKey={docInputKeys.description_ka}
+              onChange={handleDocUpload}
             />
-            <Input
+            <DocInput
               name="description_en"
-              label="Description EN"
-              value={form.description_en}
-              onChange={onChange}
+              label="Description EN (.docx)"
+              fileName={docNames.description_en}
+              inputKey={docInputKeys.description_en}
+              onChange={handleDocUpload}
             />
-            <Input
+            <DocInput
               name="description_ru"
-              label="Description RU"
-              value={form.description_ru}
-              onChange={onChange}
+              label="Description RU (.docx)"
+              fileName={docNames.description_ru}
+              inputKey={docInputKeys.description_ru}
+              onChange={handleDocUpload}
             />
-            <Input
+
+            {/* INGREDIENTS DOCX UPLOADS */}
+            <DocInput
               name="ingredients_ka"
-              label="Ingredients KA"
-              value={form.ingredients_ka}
-              onChange={onChange}
+              label="Ingredients KA (.docx)"
+              fileName={docNames.ingredients_ka}
+              inputKey={docInputKeys.ingredients_ka}
+              onChange={handleDocUpload}
             />
-            <Input
+            <DocInput
               name="ingredients_en"
-              label="Ingredients EN"
-              value={form.ingredients_en}
-              onChange={onChange}
+              label="Ingredients EN (.docx)"
+              fileName={docNames.ingredients_en}
+              inputKey={docInputKeys.ingredients_en}
+              onChange={handleDocUpload}
             />
-            <Input
+            <DocInput
               name="ingredients_ru"
-              label="Ingredients RU"
-              value={form.ingredients_ru}
-              onChange={onChange}
-            />
-            <Input
-              name="usage_ka"
-              label="Usage KA"
-              value={form.usage_ka}
-              onChange={onChange}
-            />
-            <Input
-              name="usage_en"
-              label="Usage EN"
-              value={form.usage_en}
-              onChange={onChange}
-            />
-            <Input
-              name="usage_ru"
-              label="Usage RU"
-              value={form.usage_ru}
-              onChange={onChange}
-            />
-            <Input
-              name="hairType_ka"
-              label="Hair Type KA (comma separated)"
-              value={form.hairType_ka}
-              onChange={onChange}
-            />
-            <Input
-              name="hairType_en"
-              label="Hair Type EN"
-              value={form.hairType_en}
-              onChange={onChange}
-            />
-            <Input
-              name="hairType_ru"
-              label="Hair Type RU"
-              value={form.hairType_ru}
-              onChange={onChange}
-            />
-            <Input
-              name="skinType_ka"
-              label="Skin Type KA"
-              value={form.skinType_ka}
-              onChange={onChange}
-            />
-            <Input
-              name="skinType_en"
-              label="Skin Type EN"
-              value={form.skinType_en}
-              onChange={onChange}
-            />
-            <Input
-              name="skinType_ru"
-              label="Skin Type RU"
-              value={form.skinType_ru}
-              onChange={onChange}
+              label="Ingredients RU (.docx)"
+              fileName={docNames.ingredients_ru}
+              inputKey={docInputKeys.ingredients_ru}
+              onChange={handleDocUpload}
             />
 
             <div className="bg-gray-200 my-2 p-2 rounded space-y-2">
               <input type="file" multiple onChange={handleImageUpload} />
-
               {uploading && <div>Uploading...</div>}
 
               <div className="flex gap-2 flex-wrap bg-gray-200 p-2 rounded">
@@ -661,7 +620,6 @@ export default function Products() {
                       alt=""
                       className="w-20 h-20 object-cover rounded"
                     />
-
                     <button
                       type="button"
                       onClick={() =>
@@ -685,6 +643,7 @@ export default function Products() {
           </form>
         </div>
       )}
+
       {/* PRODUCT LIST */}
       <div className="rounded-lg bg-white shadow">
         <table className="w-full text-sm">
@@ -702,11 +661,8 @@ export default function Products() {
             {products.map((p) => (
               <tr key={p._id} className="border-b">
                 <td className="px-4 py-3">{getText(p.name)}</td>
-
                 <td className="px-4 py-3">{p.brand}</td>
-
                 <td className="px-4 py-3">{getText(p.category)}</td>
-
                 <td className="px-4 py-3 text-right">{p.price}</td>
 
                 <td className="px-4 py-3 text-right space-x-2">
@@ -740,6 +696,25 @@ function Input({ label, ...props }) {
     <div className="flex flex-col gap-1">
       <label>{label}</label>
       <input {...props} className="border rounded px-2 py-1" />
+    </div>
+  );
+}
+
+function DocInput({ label, name, fileName, inputKey, ...props }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label>{label}</label>
+      <input
+        key={inputKey} // ✅ remount when key changes (resets selected file)
+        type="file"
+        accept=".docx"
+        name={name}
+        {...props}
+        className="border rounded px-2 py-1"
+      />
+      {fileName ? (
+        <div className="text-xs text-gray-600">Selected: {fileName}</div>
+      ) : null}
     </div>
   );
 }

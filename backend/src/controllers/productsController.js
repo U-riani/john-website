@@ -1,7 +1,6 @@
 // backend/src/controllers/productsController.js
 
 import Product from "../models/Product.js";
-import WarehouseStock from "../models/WarehouseStock.js";
 
 /* =====================================================
    HELPERS
@@ -74,55 +73,23 @@ export async function importProducts(req, res) {
   }
 
   try {
-    // 1️⃣ get all existing barcodes
-    const barcodes = products.map((p) => p.barcode).filter(Boolean);
+    const createdProducts = [];
 
-    const existing = await Product.find(
-      { barcode: { $in: barcodes } },
-      { barcode: 1 },
-    ).lean();
-
-    const existingSet = new Set(existing.map((p) => p.barcode));
-    const seen = new Set();
-    const skippedBarcodes = [];
-
-    // 2️⃣ keep ONLY new products
-    const toInsert = products.filter((p) => {
-      if (!p.barcode) {
-        skippedBarcodes.push("(missing)");
-        return false;
-      }
-
-      if (existingSet.has(p.barcode) || seen.has(p.barcode)) {
-        skippedBarcodes.push(p.barcode);
-        return false;
-      }
-
-      seen.add(p.barcode);
-      return true;
-    });
-
-    if (!toInsert.length) {
-      return res.json({
-        success: true,
-        inserted: 0,
-        skipped: products.length,
+    for (const prod of products) {
+      const nameValue = getLocalizedValue(prod.name);
+      const newProd = await Product.create({
+        ...prod,
+        slug: makeUniqueSlug(nameValue),
       });
+      createdProducts.push(newProd);
     }
 
-    const finalToInsert = toInsert.map((p) => ({
-      ...p,
-      slug: makeUniqueSlug(getLocalizedValue(p.name)),
-    }));
-
-    await Product.insertMany(finalToInsert);
-
-    return res.json({
-      success: true,
-      inserted: toInsert.length,
-      skipped: products.length - toInsert.length,
-      skippedBarcodes,
+    return res.status(201).json({
+      message: `${createdProducts.length} products imported successfully`,
+      products: createdProducts,
     });
+
+
   } catch (err) {
     console.log("IMPORT ERROR:", err);
 
@@ -139,19 +106,13 @@ export async function importProducts(req, res) {
 export async function getProducts(req, res) {
   try {
     const products = await Product.find();
-    const stocks = await WarehouseStock.find();
+ 
 
-    const stockMap = Object.fromEntries(
-      stocks.map((s) => [s.productId.toString(), s.quantity]),
-    );
 
-    const result = products.map((p) => ({
-      ...p.toObject(),
-      stock: stockMap[p._id.toString()] || 0,
-    }));
 
-    return res.json(result);
-  } catch {
+    return res.json(products);
+  } catch (err) {
+    console.error("Error fetching products:", err);
     return res.status(500).json({
       error: "Failed to fetch products",
     });
@@ -172,15 +133,11 @@ export async function getProductById(req, res) {
       });
     }
 
-    const stock = await WarehouseStock.findOne({
-      productId: product._id,
-    });
 
-    return res.json({
-      ...product.toObject(),
-      stock: stock?.quantity || 0,
-    });
-  } catch {
+
+    return res.json(product);
+  } catch (err) {
+    console.error("Error fetching product:", err);
     return res.status(400).json({
       error: "Invalid product id",
     });
@@ -226,10 +183,6 @@ export async function updateProduct(req, res) {
     const localizedFields = [
       "description",
       "ingredients",
-      "usage",
-      "hairType",
-      "skinType",
-      "tags",
     ];
 
     localizedFields.forEach((field) => {

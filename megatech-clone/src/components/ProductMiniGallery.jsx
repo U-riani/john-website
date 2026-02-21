@@ -1,4 +1,4 @@
-// 📁 frontend/src/components/ProductMiniGallery.jsx
+// frontend/src/components/ProductMiniGallery.jsx
 import { useState } from "react";
 
 export default function ProductMiniGallery({ images = [] }) {
@@ -8,31 +8,36 @@ export default function ProductMiniGallery({ images = [] }) {
   if (!safeImages.length) return null;
 
   return (
-    <div className="w-full shrink-0">
-      {/* MAIN IMAGE */}
-      <div className="aspect-square max-h-[60vh] overflow-hidden rounded-md border bg-white">
+    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl">
+      
+      {/* Main Image */}
+      <div className="aspect-square overflow-hidden rounded-2xl bg-gray-50">
         <img
           src={safeImages[active]}
           alt=""
-          className="h-full w-full object-cover transition-opacity duration-200"
+          className="h-full w-full object-cover transition duration-300 hover:scale-105"
         />
       </div>
 
-      {/* THUMBNAILS */}
+      {/* Thumbnails */}
       {safeImages.length > 1 && (
-        <div className="mt-2 flex gap-1 overflow-x-auto">
+        <div className="mt-4 flex gap-3 overflow-x-auto">
           {safeImages.map((img, idx) => (
             <button
               key={img}
               onClick={() => setActive(idx)}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded border ${
-                active === idx
-                  ? "border-sky-600 ring-1 ring-sky-500"
-                  : "border-gray-200"
-              }`}
               type="button"
+              className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition ${
+                active === idx
+                  ? "border-black ring-2 ring-black/30"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
             >
-              <img src={img} alt="" className="h-full w-full object-cover" />
+              <img
+                src={img}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>

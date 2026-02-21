@@ -1,53 +1,96 @@
 // frontend/src/layouts/ShopLayout.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
+import Footer from "../components/Footer";
 
 export default function ShopLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Navbar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+  // Lock scroll when sidebar open
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [sidebarOpen]);
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-6 py-6">
+  // Close on ESC
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    if (sidebarOpen) window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [sidebarOpen]);
+
+  return (
+    <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
+      <Navbar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+      <div className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
+        <div className="flex gap-6 py-5 lg:py-14">
           {/* Desktop sidebar */}
           <aside className="hidden w-64 shrink-0 lg:block">
             <Sidebar />
           </aside>
 
-          {/* Mobile overlay sidebar */}
-          {sidebarOpen && (
-            <div className="fixed inset-0 z-40 lg:hidden">
-              <button
-                aria-label="Close sidebar overlay"
-                className="absolute inset-0 bg-black/40"
-                onClick={() => setSidebarOpen(false)}
-              />
-              <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white shadow-xl overflow-y-auto">
-                <div className="relative">
-                  <div className="flex items-center justify-between border-b px-4 py-3 bg-white sticky top-0">
-                    <div className="font-semibold">Categories</div>
-                    <button
-                      className="rounded-md px-3 py-1 text-sm hover:bg-gray-100"
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      Close
-                    </button>
+          {/* Mobile Sidebar */}
+          <div
+            className={`fixed inset-0 z-40 lg:hidden transition-opacity duration-300 ${
+              sidebarOpen
+                ? "pointer-events-auto opacity-100"
+                : "pointer-events-none opacity-0"
+            }`}
+          >
+            {/* Overlay */}
+            <div
+              className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+                sidebarOpen ? "opacity-100" : "opacity-0"
+              }`}
+              onClick={() => setSidebarOpen(false)}
+            />
+
+            {/* Sliding Panel */}
+            <div
+              className={`absolute left-0 top-0 h-full w-80 max-w-[85%] transform bg-white shadow-2xl transition-transform duration-300 ease-out ${
+                sidebarOpen ? "translate-x-0" : "-translate-x-full"
+              }`}
+            >
+              {/* Header */}
+              <div className="sticky top-0 z-10 border-b border-gray-200 bg-white px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                    Categories
                   </div>
-                  <div className="p-2">
-                    <Sidebar />
-                  </div>
+
+                  {/* SEXY X BUTTON */}
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="group relative flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 transition hover:bg-gray-300"
+                    aria-label="Close sidebar"
+                  >
+                    <span className="absolute h-4 w-4">
+                      <span className="absolute top-1/2 left-0 h-[2px] w-4 -translate-y-1/2 rotate-45 bg-gray-700 transition group-hover:bg-black" />
+                      <span className="absolute top-1/2 left-0 h-[2px] w-4 -translate-y-1/2 -rotate-45 bg-gray-700 transition group-hover:bg-black" />
+                    </span>
+                  </button>
                 </div>
               </div>
+
+              {/* Sidebar Content */}
+              <div className="h-[calc(100%-64px)] overflow-y-auto p-3">
+                <Sidebar />
+              </div>
             </div>
-          )}
+          </div>
 
           {/* Main content */}
           <main className="min-w-0 flex-1">{children}</main>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
