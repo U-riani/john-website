@@ -1,5 +1,6 @@
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Topbar({ onMenuClick }) {
   const { logout } = useAuth();
@@ -17,7 +18,7 @@ export default function Topbar({ onMenuClick }) {
           ☰
         </button>
 
-        <p className="font-semibold">Admin Dashboard</p>
+        <Link to="/" className="font-semibold">Admin Dashboard</Link>
       </div>
 
       {/* Right */}

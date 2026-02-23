@@ -224,11 +224,11 @@ export default function ProductList() {
               </div>
 
               <div className="mt-auto flex items-end justify-between  px-3 pb-3">
-                <div className="text-zinc-700 font-semibold">{p.price} ₾</div>
+                <div className="text-zinc-700 font-semibold border border-gray-200 px-2 py-1 rounded-xl shadow-md">{p.price} ₾</div>
                 <Link
                   key={p._id}
                   to={`/products/${p._id}`}
-                  className=" rounded-xl  px-3 pt-1 pb-1 bg-lime-500/80 text-white transition hover:bg-lime-600 hover:shadow-md active:bg-lime-500/80 active:shadow-sm"
+                  className=" rounded-xl  px-3 pt-1 pb-1 bg-lime-500/80 text-white transition shadow-md shadow-black/35 hover:bg-lime-600 hover:shadow-md active:bg-lime-500/80 active:shadow-sm"
                 >
                   {t("seeMore")}
                 </Link>

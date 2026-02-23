@@ -58,7 +58,7 @@ export default function Sidebar() {
       mounted = false;
     };
     // important: re-run on language change so names rebuild in new lang
-  }, [i18n.language, activeCategory]);
+  }, [i18n.language]);
 
   const toggle = (catName) => {
     setOpenCat((prev) => (prev === catName ? null : catName));
@@ -101,8 +101,8 @@ export default function Sidebar() {
                   onClick={() => toggle(cat.name)}
                   className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
                     isOpen
-                      ? "border-gray-300 bg-lime-300 text-white "
-                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      ? "border-gray-300 bg-lime-300 text-gray-700 "
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-lime-300"
                   }`}
                   aria-label={isOpen ? "Collapse" : "Expand"}
                 >
@@ -113,8 +113,8 @@ export default function Sidebar() {
                   to={`/products?category=${encodeURIComponent(cat.name)}`}
                   className={`bg-lime-300 flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
                     isActiveCat
-                      ? "bg-lime-300 text-white "
-                      : "text-gray-800  hover:bg-gray-50"
+                      ? "bg-lime-300 text-black hover:bg-lime-400"
+                      : "text-gray-800  hover:bg-lime-400"
                   }`}
                   onClick={() => setOpenCat(cat.name)} // keep open after click
                 >
@@ -139,8 +139,8 @@ export default function Sidebar() {
                           )}&subCategory=${encodeURIComponent(sub)}`}
                           className={`block rounded-xl px-3 py-2 text-sm transition border border-gray-300 shadow-md ${
                             isActiveSub
-                              ? "bg-lime-200 text-gray-900 font-semibold"
-                              : "text-gray-700 hover:bg-gray-50"
+                              ? "bg-lime-200 text-gray-900 font-semibold hover:bg-lime-300"
+                              : "text-gray-700 hover:bg-lime-200"
                           }`}
                         >
                           {sub}

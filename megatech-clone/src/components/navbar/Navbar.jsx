@@ -100,7 +100,7 @@ export default function Navbar({ onToggleSidebar }) {
           >
             🛒
             {cartCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-lime-500 px-1 text-xs font-semibold text-black shadow-sm">
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-semibold text-white shadow-sm">
                 {cartCount}
               </span>
             )}

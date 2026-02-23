@@ -20,6 +20,20 @@ export async function getOrders() {
   return res.json();
 }
 
+export async function getOrdersByStatus(orderStatus) {
+  const res = await fetch(`${BASE_URL}/orders/status/${orderStatus}`, {
+    headers: authHeaders(),
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("admin_token");
+    window.location.href = "/login";
+    return;
+  }
+
+  return res.json();
+}
+
 export async function getOrderById(id) {
   const res = await fetch(`${BASE_URL}/orders/${id}`, {
     headers: authHeaders(),

@@ -9,6 +9,7 @@ import Products from "./pages/Products";
 // import Warehouse from "./pages/Warehouse";
 // import StockLogs from "./pages/StockLogs";
 import FailedOrders from "./pages/FailedOrders";
+import DashboardOrdersByStats from "./pages/DashboardOrdersByStats";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <AdminLayout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/orders/:ordersByStatus" element={<DashboardOrdersByStats />} />
                 <Route path="/orders" element={<OrdersList />} />
                 <Route path="/orders/:id" element={<OrderDetails />} />
                 <Route path="/products" element={<Products />} />

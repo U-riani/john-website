@@ -70,28 +70,28 @@ export async function createOrder(req, res) {
     return res.status(400).json({ error: "Items required" });
   }
 
-  for (const item of items) {
-    if (!mongoose.isValidObjectId(item.productId)) {
-      throw new Error("Invalid product id");
+  try {
+    for (const item of items) {
+      if (!mongoose.isValidObjectId(item.productId)) {
+        throw new Error("Invalid product id");
+      }
+
+      const product = await Product.findById(item.productId);
+
+      if (!product) throw new Error("Product missing");
+
+      item.title = {
+        ka: product.name?.ka || "",
+        en: product.name?.en || "",
+        ru: product.name?.ru || "",
+      };
+      item.price = product.salePrice ?? product.price;
     }
 
-    const product = await Product.findById(item.productId);
+    const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-    if (!product) throw new Error("Product missing");
+    const session = await mongoose.startSession();
 
-    item.title = {
-      ka: product.name?.ka || "",
-      en: product.name?.en || "",
-      ru: product.name?.ru || "",
-    };
-    item.price = product.salePrice ?? product.price;
-  }
-
-  const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  const session = await mongoose.startSession();
-
-  try {
     session.startTransaction();
 
     // 1️⃣ CREATE ORDER FIRST
@@ -112,8 +112,6 @@ export async function createOrder(req, res) {
       ],
       { session },
     ).then((r) => r[0]);
-
- 
 
     await session.commitTransaction();
     session.endSession();
@@ -195,6 +193,38 @@ export async function getAllOrders(req, res) {
     return res.status(200).json(orders);
   } catch (err) {
     console.error("Get all orders failed:", err);
+    return res.status(500).json({ error: "Failed to fetch orders" });
+  }
+}
+
+export async function getOrdersByStatus(req, res) {
+  const { status } = req.params;
+
+  const allowedStatuses = [
+    "pending",
+    "collected",
+    "paid",
+    "sent",
+    "received",
+    "cancelled",
+    "total"
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+let orders;
+  try {
+    if(status === 'total') {
+      orders = await Order.find().sort({ createdAt: -1 });
+    }else {
+      orders = await Order.find({ status }).sort({ createdAt: -1 });
+
+    }
+    return res.status(200).json(orders);
+  } catch (err) {
+    console.error("Get orders by status failed:", err);
     return res.status(500).json({ error: "Failed to fetch orders" });
   }
 }

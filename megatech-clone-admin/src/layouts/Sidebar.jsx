@@ -59,7 +59,7 @@ export default function Sidebar({ open, onClose }) {
           >
             Products
           </NavLink>
-          <NavLink
+          {/* <NavLink
             to="/warehouse"
             onClick={onClose}
             className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
@@ -79,7 +79,7 @@ export default function Sidebar({ open, onClose }) {
             className={({ isActive }) => `${navItem} ${isActive ? active : ""}`}
           >
             Failed Orders
-          </NavLink>
+          </NavLink> */}
         </nav>
       </aside>
     </>

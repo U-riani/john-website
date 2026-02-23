@@ -120,6 +120,12 @@ export default function OrderForClient() {
       ? (t("orderPaid") || "Payment confirmed")
       : order.status === "pending"
       ? (t("orderPending") || "Waiting for confirmation")
+      : order.status === "collected"
+      ? (t("orderCollected") || "Order collected")
+      : order.status === "sent"
+      ? (t("orderSent") || "Order sent")
+      : order.status === "received"
+      ? (t("orderRecived") || "Order recived")
       : (t("orderFailed") || "There was an issue");
 
   return (
