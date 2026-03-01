@@ -1,6 +1,6 @@
 // frontend/src/components/Sidebar.jsx
 import { useEffect, useMemo, useState } from "react";
-import { getProducts } from "../api/products";
+import { useProductStore } from "../store/useProductStore";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getLocalized } from "../utils/getLocalized";
@@ -8,8 +8,8 @@ import { getLocalized } from "../utils/getLocalized";
 export default function Sidebar() {
   const { i18n } = useTranslation();
 
-  const [loading, setLoading] = useState(true);
-  const [tree, setTree] = useState([]); // [{ name, subs: [] }]
+  const { meta, fetchMeta, loading } = useProductStore();
+  const tree = meta?.categories || [];
   const [openCat, setOpenCat] = useState(null);
 
   const [searchParams] = useSearchParams();
@@ -17,47 +17,9 @@ export default function Sidebar() {
   const activeSubCategory = searchParams.get("subCategory") || "";
 
   useEffect(() => {
-    let mounted = true;
-
-    setLoading(true);
-    getProducts()
-      .then((products) => {
-        if (!mounted) return;
-
-        // Build category -> subcategory set
-        const map = new Map(); // cat -> Set(subs)
-
-        for (const p of products) {
-          const cat = getLocalized(p.category, i18n.language);
-          if (!cat) continue;
-
-          const sub = getLocalized(p.subCategory, i18n.language);
-
-          if (!map.has(cat)) map.set(cat, new Set());
-          if (sub) map.get(cat).add(sub);
-        }
-
-        const built = [...map.entries()]
-          .map(([name, subsSet]) => ({
-            name,
-            subs: [...subsSet].sort((a, b) => a.localeCompare(b)),
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        setTree(built);
-
-        // Auto-open active category (nice UX)
-        if (activeCategory) setOpenCat(activeCategory);
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-    // important: re-run on language change so names rebuild in new lang
+    if (!meta?.categories?.length) {
+      fetchMeta(i18n.language);
+    }
   }, [i18n.language]);
 
   const toggle = (catName) => {

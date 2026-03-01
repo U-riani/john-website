@@ -30,30 +30,37 @@ export default function Dashboard() {
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <StatCard status="total" title="Total Orders" value={stats.total} />
       <StatCard
+        status="pending"
         title="Pending Orders"
         value={stats.pending}
         color="text-yellow-600"
       />
       <StatCard
-      status="collected"
+        status="collected"
         title="Collected Orders"
         value={stats.collected}
         color="text-sky-400"
       />
-      <StatCard status="paid"  title="Paid Orders" value={stats.paid} color="text-green-600" />
       <StatCard
+        status="paid"
+        title="Paid Orders"
+        value={stats.paid}
+        color="text-green-600"
+      />
+      <StatCard
+        status="sent"
         title="Sent Orders"
         value={stats.sent}
         color="text-indigo-600"
       />
       <StatCard
-      status="received"
+        status="received"
         title="Received Orders"
         value={stats.received}
         color="text-teal-600"
       />
       <StatCard
-      status="cancelled"
+        status="cancelled"
         title="Cancelled Orders"
         value={stats.cancelled}
         color="text-rose-600"

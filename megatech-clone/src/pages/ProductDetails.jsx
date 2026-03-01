@@ -1,24 +1,42 @@
 // frontend/src/pages/ProductDetails.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getProductById } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { useTranslation } from "react-i18next";
 import { getLocalized } from "../utils/getLocalized";
 import ProductMiniGallery from "../components/ProductMiniGallery";
+import { useProductStore } from "../store/useProductStore";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const { addToCart } = useCart();
   const { t, i18n } = useTranslation();
 
+  const { getProductByIdCached } = useProductStore();
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getProductById(id)
-      .then(setProduct)
-      .finally(() => setLoading(false));
+    let ignore = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await getProductByIdCached(id);
+        if (!ignore) setProduct(data);
+      } catch {
+        if (!ignore) setProduct(null);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   if (loading)
@@ -59,8 +77,6 @@ export default function ProductDetails() {
 
             {/* Desktop Ingredients */}
             <div className="hidden lg:block rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-
-
               <div
                 className="prose prose-sm max-w-none text-gray-700"
                 dangerouslySetInnerHTML={{ __html: ingredientsHtml }}
@@ -115,7 +131,6 @@ export default function ProductDetails() {
 
             {/* Description Card */}
             <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-
               <div
                 className="prose prose-sm max-w-none text-gray-700"
                 dangerouslySetInnerHTML={{ __html: descriptionHtml }}
@@ -124,8 +139,6 @@ export default function ProductDetails() {
 
             {/* Mobile Ingredients */}
             <div className="lg:hidden rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-
-
               <div
                 className="prose prose-sm max-w-none text-gray-700"
                 dangerouslySetInnerHTML={{ __html: ingredientsHtml }}

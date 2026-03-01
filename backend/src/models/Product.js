@@ -29,7 +29,6 @@ const ProductSchema = new mongoose.Schema(
       ...LocalizedString,
     },
 
-
     /* NEW → translated fields */
     category: {
       ...LocalizedString,
@@ -37,8 +36,6 @@ const ProductSchema = new mongoose.Schema(
     subCategory: {
       ...LocalizedString,
     },
-
-
 
     /* ---------- NORMAL FIELDS ---------- */
 
@@ -83,7 +80,37 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-ProductSchema.index({ "name.en": "text", "name.ka": "text" });
-ProductSchema.index({ brand: 1, "category.en": 1 });
+/* ---------- PERFORMANCE INDEXES ---------- */
+
+// Active products only (very common filter)
+ProductSchema.index({ isActive: 1 });
+
+// Category per language
+ProductSchema.index({ "category.en": 1 });
+ProductSchema.index({ "category.ka": 1 });
+ProductSchema.index({ "category.ru": 1 });
+
+// SubCategory per language
+ProductSchema.index({ "subCategory.en": 1 });
+ProductSchema.index({ "subCategory.ka": 1 });
+ProductSchema.index({ "subCategory.ru": 1 });
+
+// Price range filtering
+ProductSchema.index({ price: 1 });
+
+// Sorting
+ProductSchema.index({ createdAt: -1 });
+
+// Sorting by localized name
+ProductSchema.index({ "name.en": 1 });
+ProductSchema.index({ "name.ka": 1 });
+ProductSchema.index({ "name.ru": 1 });
+
+ProductSchema.index({
+  "name.en": "text",
+  "name.ka": "text",
+  "name.ru": "text",
+  brand: "text",
+});
 
 export default mongoose.model("Product", ProductSchema);

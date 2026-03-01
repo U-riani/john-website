@@ -88,8 +88,6 @@ export async function importProducts(req, res) {
       message: `${createdProducts.length} products imported successfully`,
       products: createdProducts,
     });
-
-
   } catch (err) {
     console.log("IMPORT ERROR:", err);
 
@@ -106,9 +104,6 @@ export async function importProducts(req, res) {
 export async function getProducts(req, res) {
   try {
     const products = await Product.find();
- 
-
-
 
     return res.json(products);
   } catch (err) {
@@ -133,14 +128,93 @@ export async function getProductById(req, res) {
       });
     }
 
-
-
     return res.json(product);
   } catch (err) {
     console.error("Error fetching product:", err);
     return res.status(400).json({
       error: "Invalid product id",
     });
+  }
+}
+
+export async function getProductsPaginated(req, res) {
+  try {
+    const {
+      page = 1,
+      limit = 12,
+      category,
+      subCategory,
+      brand,
+      minPrice,
+      maxPrice,
+      q,
+      sort,
+      lang = "en",
+    } = req.query;
+
+    const pageNumber = Number.isFinite(Number(page))
+      ? Math.max(Number(page), 1)
+      : 1;
+
+    const limitNumber = Number.isFinite(Number(limit))
+      ? Math.min(Number(limit), 100)
+      : 12;
+
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const filter = {};
+
+    filter.isActive = true;
+
+    if (category) filter[`category.${lang}`] = category;
+    if (subCategory) filter[`subCategory.${lang}`] = subCategory;
+    if (brand) {
+      if (Array.isArray(brand)) {
+        filter.brand = { $in: brand };
+      } else {
+        filter.brand = brand;
+      }
+    }
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    let sortOption = { createdAt: -1 };
+
+    if (q) {
+      filter.$text = { $search: q };
+      sortOption = { score: { $meta: "textScore" } };
+    }
+
+    if (sort === "price_asc") sortOption = { price: 1 };
+    if (sort === "price_desc") sortOption = { price: -1 };
+    if (sort === "name_asc") sortOption = { [`name.${lang}`]: 1 };
+    if (sort === "name_desc") sortOption = { [`name.${lang}`]: -1 };
+
+    const projection = q ? { score: { $meta: "textScore" } } : {};
+
+    const [products, total] = await Promise.all([
+      Product.find(filter, projection)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limitNumber),
+      Product.countDocuments(filter),
+    ]);
+
+    return res.json({
+      data: products,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber),
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching paginated products:", err);
+    return res.status(500).json({ error: "Failed to fetch products" });
   }
 }
 
@@ -180,10 +254,7 @@ export async function updateProduct(req, res) {
       );
     }
 
-    const localizedFields = [
-      "description",
-      "ingredients",
-    ];
+    const localizedFields = ["description", "ingredients"];
 
     localizedFields.forEach((field) => {
       if (req.body[field]) {
@@ -221,5 +292,47 @@ export async function deleteProduct(req, res) {
     return res.status(400).json({
       error: "Delete failed",
     });
+  }
+}
+
+export async function getProductsMeta(req, res) {
+  try {
+    const { lang = "en" } = req.query;
+
+    const products = await Product.find(
+      { isActive: true },
+      {
+        [`category.${lang}`]: 1,
+        [`subCategory.${lang}`]: 1,
+        brand: 1,
+      },
+    );
+
+    const categoryMap = new Map();
+    const brandSet = new Set();
+
+    for (const p of products) {
+      const cat = p.category?.[lang];
+      const sub = p.subCategory?.[lang];
+
+      if (cat) {
+        if (!categoryMap.has(cat)) categoryMap.set(cat, new Set());
+        if (sub) categoryMap.get(cat).add(sub);
+      }
+
+      if (p.brand) brandSet.add(p.brand);
+    }
+
+    const categories = [...categoryMap.entries()].map(([name, subs]) => ({
+      name,
+      subs: [...subs].sort(),
+    }));
+
+    return res.json({
+      categories: categories.sort((a, b) => a.name.localeCompare(b.name)),
+      brands: [...brandSet].sort(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch meta" });
   }
 }

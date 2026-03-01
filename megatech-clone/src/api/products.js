@@ -14,6 +14,14 @@ export async function getProducts(query = "") {
   return res.json();
 }
 
+export const getPaginatedProducts = async (page = 1, limit = 12) => {
+  const res = await fetch(`${BASE_URL}/products/paginated?page=${page}&limit=${limit}`);
+
+  if (!res.ok) throw new Error("Failed to fetch paginated products");
+
+  return res.json();
+};
+
 /* ---------- GET SINGLE PRODUCT ---------- */
 export async function getProductById(id) {
   const res = await fetch(`${BASE_URL}/products/${id}`);

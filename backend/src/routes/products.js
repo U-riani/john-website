@@ -7,6 +7,8 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
+  getProductsPaginated,
+  getProductsMeta,
 } from "../controllers/productsController.js";
 import adminAuth from "../middleware/adminAuth.js";
 
@@ -20,6 +22,8 @@ router.delete("/:id", adminAuth, deleteProduct);
 
 // public/admin
 router.get("/", getProducts);
+router.get("/paginated", getProductsPaginated);
+router.get("/meta", getProductsMeta);
 router.get("/:id", getProductById);
 
 export default router;

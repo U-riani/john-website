@@ -1,24 +1,26 @@
 // frontend/src/pages/ProductList.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getProducts } from "../api/products";
 import Filters from "../components/Filters";
 import { useTranslation } from "react-i18next";
 import { getLocalized } from "../utils/getLocalized";
+import { useProductStore } from "../store/useProductStore";
+import { useNavigate } from "react-router-dom";
 
-const toNumberOrNull = (v) => {
-  if (v === "" || v === null || v === undefined) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+// const toNumberOrNull = (v) => {
+//   if (v === "" || v === null || v === undefined) return null;
+//   const n = Number(v);
+//   return Number.isFinite(n) ? n : null;
+// };
 
 export default function ProductList() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading, fetchProducts, pagination, meta, fetchMeta } =
+    useProductStore();
+
+  const navigate = useNavigate();
 
   // Drawer UI
   const [filtersOpen, setFiltersOpen] = useState(false);
-
   const { t, i18n } = useTranslation();
   const [sort, setSort] = useState("");
 
@@ -29,107 +31,68 @@ export default function ProductList() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [selectedBrands, setSelectedBrands] = useState([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [page, setPage] = useState(1);
 
   // Optional: still support search params for initial query/category
   const [searchParams] = useSearchParams();
-  const q = searchParams.get("q") || "";
-  const categoryFromUrl = searchParams.get("category") || "";
+
+  const buildQuery = () => {
+    const params = new URLSearchParams();
+
+    params.set("page", page);
+    params.set("limit", 12);
+    params.set("lang", i18n.language);
+
+    if (debouncedQuery) params.set("q", debouncedQuery);
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedSubCategory) params.set("subCategory", selectedSubCategory);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (selectedBrands.length) {
+      selectedBrands.forEach((b) => params.append("brand", b));
+    }
+    if (sort) params.set("sort", sort);
+
+    return params.toString();
+  };
+
+  const brandKey = useMemo(
+    () => [...selectedBrands].sort().join(","),
+    [selectedBrands],
+  );
 
   // Load products once
   useEffect(() => {
-    setLoading(true);
-
-    getProducts()
-      .then((data) => {
-        setProducts(data);
-
-        if (categoryFromUrl) setSelectedCategory(categoryFromUrl);
-        if (q) setNameQuery(q);
-      })
-      .finally(() => setLoading(false));
-  }, [q, categoryFromUrl]);
-
-  // Build filter option lists from products
-  const categories = useMemo(() => {
-    const set = new Set();
-    for (const p of products) {
-      const c = getLocalized(p.category, i18n.language);
-      if (c) set.add(c);
-    }
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products, i18n.language]);
-
-  const brands = useMemo(() => {
-    const set = new Set(products.map((p) => p.brand).filter(Boolean));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products]);
-
-  const subCategories = useMemo(() => {
-    const set = new Set();
-    for (const p of products) {
-      const c = getLocalized(p.category, i18n.language);
-      if (selectedCategory && c !== selectedCategory) continue;
-
-      const sc = getLocalized(p.subCategory, i18n.language);
-      if (sc) set.add(sc);
-    }
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products, i18n.language, selectedCategory]);
-
-  // Apply filters + sort
-  const filtered = useMemo(() => {
-    const min = toNumberOrNull(minPrice);
-    const max = toNumberOrNull(maxPrice);
-    const nq = nameQuery.trim().toLowerCase();
-
-    let result = products.filter((p) => {
-      const name = (getLocalized(p.name, i18n.language) || "").toLowerCase();
-      const cat = getLocalized(p.category, i18n.language) || "";
-      const sub = getLocalized(p.subCategory, i18n.language) || "";
-      const brand = p.brand || "";
-      const price = Number(p.price || 0);
-
-      if (nq && !name.includes(nq)) return false;
-      if (selectedCategory && cat !== selectedCategory) return false;
-      if (selectedSubCategory && sub !== selectedSubCategory) return false;
-      if (selectedBrands.length && !selectedBrands.includes(brand))
-        return false;
-      if (min !== null && price < min) return false;
-      if (max !== null && price > max) return false;
-
-      return true;
-    });
-
-    if (sort === "price_asc") result.sort((a, b) => a.price - b.price);
-    if (sort === "price_desc") result.sort((a, b) => b.price - a.price);
-
-    if (sort === "name_asc") {
-      result.sort((a, b) =>
-        (getLocalized(a.name, i18n.language) || "").localeCompare(
-          getLocalized(b.name, i18n.language) || "",
-        ),
-      );
-    }
-    if (sort === "name_desc") {
-      result.sort((a, b) =>
-        (getLocalized(b.name, i18n.language) || "").localeCompare(
-          getLocalized(a.name, i18n.language) || "",
-        ),
-      );
-    }
-
-    return result;
+    fetchProducts(buildQuery());
   }, [
-    products,
-    i18n.language,
-    nameQuery,
+    page,
+    sort,
+    debouncedQuery,
     selectedCategory,
     selectedSubCategory,
-    selectedBrands,
     minPrice,
     maxPrice,
-    sort,
+    brandKey,
+    i18n.language,
   ]);
+
+  useEffect(() => {
+    fetchMeta(i18n.language);
+  }, [i18n.language]);
+
+  // Build filter option lists from products
+  const categories = meta?.categories?.map((c) => c.name) || [];
+  const brands = meta?.brands || [];
+
+  const subCategories = useMemo(() => {
+    const categoryObj = meta?.categories?.find(
+      (c) => c.name === selectedCategory,
+    );
+    return categoryObj ? categoryObj.subs : [];
+  }, [meta?.categories, selectedCategory]);
+
+  // Apply filters + sort
 
   const activeFiltersCount = useMemo(() => {
     let c = 0;
@@ -148,18 +111,40 @@ export default function ProductList() {
     selectedBrands,
   ]);
 
+  // useEffect(() => {
+  //   setPage(1);
+  // }, [
+  //   sort,
+  //   nameQuery,
+  //   selectedCategory,
+  //   selectedSubCategory,
+  //   minPrice,
+  //   maxPrice,
+  //   brandKey,
+  //   i18n.language,
+  // ]);
+
   const onFilterChange = (key, value) => {
-    if (key === "nameQuery") setNameQuery(value);
+    if (key === "nameQuery") {
+      setNameQuery(value);
+    }
 
     if (key === "category") {
       setSelectedCategory(value);
       setSelectedSubCategory("");
     }
 
-    if (key === "subCategory") setSelectedSubCategory(value);
+    if (key === "subCategory") {
+      setSelectedSubCategory(value);
+    }
 
-    if (key === "minPrice") setMinPrice(value);
-    if (key === "maxPrice") setMaxPrice(value);
+    if (key === "minPrice") {
+      setMinPrice(value);
+    }
+
+    if (key === "maxPrice") {
+      setMaxPrice(value);
+    }
 
     if (key === "brand") {
       setSelectedBrands((prev) =>
@@ -189,6 +174,20 @@ export default function ProductList() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [filtersOpen]);
 
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => {
+  //     if (nameQuery !== searchParams.get("q")) {
+  //       const params = new URLSearchParams(searchParams);
+  //       if (nameQuery) params.set("q", nameQuery);
+  //       else params.delete("q");
+
+  //       navigate(`/products?${params.toString()}`);
+  //     }
+  //   }, 400);
+
+  //   return () => clearTimeout(timeout);
+  // }, [nameQuery]);
+
   // Prevent background scroll when drawer open
   useEffect(() => {
     if (!filtersOpen) return;
@@ -199,14 +198,57 @@ export default function ProductList() {
     };
   }, [filtersOpen]);
 
-  if (loading) return <div>{t("loading")}</div>;
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category") || "";
+    const subCategoryFromUrl = searchParams.get("subCategory") || "";
+    const qFromUrl = searchParams.get("q") || "";
+    const pageFromUrl = Number(searchParams.get("page")) || 1;
+
+    setSelectedCategory(categoryFromUrl);
+    setSelectedSubCategory(subCategoryFromUrl);
+    setNameQuery(qFromUrl);
+    setDebouncedQuery(qFromUrl);
+    setPage(pageFromUrl);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (nameQuery) params.set("q", nameQuery);
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedSubCategory) params.set("subCategory", selectedSubCategory);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+
+    selectedBrands.forEach((b) => params.append("brand", b));
+
+    if (sort) params.set("sort", sort);
+
+    params.set("page", page);
+
+    navigate(`/products?${params.toString()}`, { replace: true });
+  }, [
+    nameQuery,
+    selectedCategory,
+    selectedSubCategory,
+    minPrice,
+    maxPrice,
+    selectedBrands,
+    sort,
+    page,
+  ]);
 
   return (
     <div className="relative">
       {/* Main content */}
-      <div className="space-y-4">
+      <div className="relative space-y-4">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900" />
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((p) => (
+          {products.map((p) => (
             <div
               key={p._id}
               className="flex flex-col overflow-hidden group rounded-2xl border border-gray-200 shadow-md bg-white "
@@ -224,7 +266,9 @@ export default function ProductList() {
               </div>
 
               <div className="mt-auto flex items-end justify-between  px-3 pb-3">
-                <div className="text-zinc-700 font-semibold border border-gray-200 px-2 py-1 rounded-xl shadow-md">{p.price} ₾</div>
+                <div className="text-zinc-700 font-semibold border border-gray-200 px-2 py-1 rounded-xl shadow-md">
+                  {p.price} ₾
+                </div>
                 <Link
                   key={p._id}
                   to={`/products/${p._id}`}
@@ -236,6 +280,29 @@ export default function ProductList() {
             </div>
           ))}
         </div>
+        {pagination && (
+          <div className="mt-6 flex justify-center gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1 border rounded disabled:opacity-40"
+            >
+              Prev
+            </button>
+
+            <span className="px-3 py-1 text-sm">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+
+            <button
+              disabled={page === pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-3 py-1 border rounded disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Floating filter button */}
@@ -258,7 +325,6 @@ export default function ProductList() {
         className={`fixed inset-0 z-50 ${
           filtersOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
-        aria-hidden={!filtersOpen}
       >
         {/* overlay */}
         <div
@@ -278,7 +344,7 @@ export default function ProductList() {
             <div>
               <div className="text-lg font-semibold">Filters</div>
               <div className="text-xs text-gray-500">
-                Showing {filtered.length} of {products.length}
+                Showing {pagination?.total || 0} products
               </div>
             </div>
 
@@ -296,7 +362,7 @@ export default function ProductList() {
             <Filters
               sort={sort}
               onSortChange={setSort}
-              total={filtered.length}
+              total={pagination?.total || 0}
               nameQuery={nameQuery}
               categories={categories}
               subCategories={subCategories}

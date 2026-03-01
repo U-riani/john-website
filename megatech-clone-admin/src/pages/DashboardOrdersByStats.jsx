@@ -14,6 +14,8 @@ export default function DashboardOrdersByStats() {
       .finally(() => setLoading(false));
   }, []);
 
+  console.log(ordersByStatus)
+  console.log(orders)
   if (loading) return <div>Loading orders…</div>;
 
   return (
